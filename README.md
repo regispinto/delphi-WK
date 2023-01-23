@@ -14,3 +14,8 @@ Além dessa opção no TPopupMenu, implementei a opção de excluir todos os reg
 * Tela da aplicação
 
 ![image](https://user-images.githubusercontent.com/5474103/214058370-a233dd42-d1ab-4be1-806f-faa245168d5e.png)
+
+
+* Exibição do TPopupMenu
+
+![image](https://user-images.githubusercontent.com/5474103/214072153-cd79a3d2-5345-4be8-8766-0a78ccda662c.png)
