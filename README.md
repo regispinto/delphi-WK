@@ -19,3 +19,8 @@ Além dessa opção no TPopupMenu, implementei a opção de excluir todos os reg
 * Exibição do TPopupMenu
 
 ![image](https://user-images.githubusercontent.com/5474103/214072153-cd79a3d2-5345-4be8-8766-0a78ccda662c.png)
+
+* Formulário no modo inserção
+
+![image](https://user-images.githubusercontent.com/5474103/214072679-5e2e9ea2-c9b8-4931-8c78-e49abdd4a826.png)
+
