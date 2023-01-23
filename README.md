@@ -10,3 +10,6 @@ Considerações:
 e vicular os mesmos a tabela Endereco, fiz isso apenas para evitar ficar cadastrando registro por registro.
 Além dessa opção no TPopupMenu, implementei a opção de excluir todos os registros para refazer os testes.
 
+* Tela da aplicação
+
+![image](https://user-images.githubusercontent.com/5474103/214058370-a233dd42-d1ab-4be1-806f-faa245168d5e.png)
