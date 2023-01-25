@@ -70,7 +70,7 @@ type
       procedure ConnectionDB;
       procedure ActivateConnection(Database: string='');
 
-      function ValidateDatabase: Boolean;
+      procedure ExistDB;
    end;
 
 implementation
@@ -154,7 +154,7 @@ begin
   end;
 
   FConnection.LoginPrompt := False;
-  FConnection.Connected := True;
+
   SaveLog('ClassConnection.SetConnectDB -> Parâmetros de conexão com o banco de dados' + CR +
     FConnection.Params[0] + CR +
     FConnection.Params[1] + CR +
@@ -185,22 +185,19 @@ begin
   end;
 end;
 
-function TConnect.ValidateDatabase: Boolean;
+procedure TConnect.ExistDB;
 begin
   try
-    Qry.Close;
-    Qry.SQL.Clear;
-    Qry.SQL.Add('show databases like ' + QuotedStr(FDatabase));
-    SaveLog('ClassConnection.ValidateDatabase: ' + CR + Qry.SQL.Text);
-    Qry.Open;
+    FConnection.Connected := False;
+    FConnection.Params.Values['Database'] := Database;
+    FConnection.Connected := True;
 
-    Result := Qry.RowsAffected > 0;
-    FErro := '';
-  except
-    on e:Exception do
+    FConnect.Erro := '';
+  Except
+    on E:Exception do
       begin
-        FErro := e.ToString;
-        Result := False;
+        FConnect.Erro := 'Erro: ' + e.Message + ' Classe: ' + e.ClassName;
+        SaveLog('ClassConnection.ExistDB -> ' + FConnect.Erro);
       end;
   end;
 end;

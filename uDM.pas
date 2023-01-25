@@ -58,7 +58,10 @@ begin
     end;
 
     FConnect.SetConnectDB(FConnect);
-    FConnect.ConnectionDB;
+    FConnect.ExistDB;
+
+    // Se FConnect.ExistDB atribuir valor a FConnect.Erro,
+    // significa que o Banco de Dados não existe e deverá ser criado
     if FConnect.Erro <> EmptyStr then
     begin
       FConnect.CreateDB;

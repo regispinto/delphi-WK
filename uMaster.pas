@@ -115,7 +115,7 @@ begin
   if Key = VK_ESCAPE then
   begin
     if FDMemTablePeople.State in [dsBrowse, dsInactive] then
-      Application.Terminate
+      frmMaster.Close
     else
       btnCancelarClick(Sender);
   end;
@@ -281,12 +281,15 @@ end;
 
 procedure TfrmMaster.ObjectSet;
 var
+  Caption: string;
   UpDateStatus,
   BrowseStatus,
   RecordsCount,
   OnOff: Boolean;
 
 begin
+  Caption := 'Base de Pessoas';
+
   UpDateStatus := FDMemTablePeople.State in [dsInsert, dsEdit];
   BrowseStatus := FDMemTablePeople.State in [dsBrowse, dsInactive];
   RecordsCount := FDMemTablePeople.RecordCount > 0;
@@ -309,9 +312,14 @@ begin
 
     if FDMemTablePeople.State in [dsInsert] then
     begin
+      Caption := Caption + ' - [Inclusão]';
+
       cbxNatureza.ItemIndex := -1;
       dtpDataRegistro.Date := Trunc(Now);
     end;
+
+    if FDMemTablePeople.State in [dsEdit] then
+      Caption := Caption + ' - [Alteração]';
 
     cbxNatureza.SetFocus;
   end
@@ -324,6 +332,7 @@ begin
     dbgDados.SetFocus;
     DispalyFooter;
   end;
+  frmMaster.Caption := Caption;
 end;
 
 procedure TfrmMaster.pmeOpcoesPopup(Sender: TObject);
@@ -350,10 +359,12 @@ end;
 procedure TfrmMaster.ThreadEnd(Sender: TObject);
 begin
   if Assigned(TThread(Sender).FatalException) then
-    showmessage('Erro de execução ' + Exception(TThread(Sender).FatalException).Message);
-  tmeThread.Enabled := True;
-
-  stbFooter.Panels[0].Text := '';
+    showmessage('Erro de execução ' + Exception(TThread(Sender).FatalException).Message)
+  else
+  begin
+    stbFooter.Panels[0].Text := '';
+    tmeThread.Enabled := True;
+  end;
 end;
 
 procedure TfrmMaster.ThreadExecute;

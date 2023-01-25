@@ -94,7 +94,6 @@ object frmMaster: TfrmMaster
       Cursor = crHandPoint
       Caption = '&Gravar'
       TabOrder = 6
-      TabStop = False
       OnClick = btnGravarClick
     end
     object btnCancelar: TBitBtn
@@ -195,8 +194,8 @@ object frmMaster: TfrmMaster
         Expanded = False
         FieldName = 'idpessoa'
         Title.Caption = 'IdPessoa'
-        Width = 47
-        Visible = True
+        Width = -1
+        Visible = False
       end
       item
         Expanded = False
