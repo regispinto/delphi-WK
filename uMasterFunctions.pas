@@ -25,7 +25,6 @@ uses
         FRegistrationDate: TDate;
         FErro: string;
 
-        //procedure RecordsSearch;
       public
         property ObjConnect: TConnect read FObjConnect write FObjConnect;
         property Qry: TFDQuery read FQry write FQry;
@@ -48,7 +47,7 @@ uses
         procedure ProcessInsertMultipleRecords;
         procedure ProcessDeleteMultipleRecords;
         procedure ProcessDeleteRecord;
-        procedure RecordsSearch; // Rever
+        procedure RecordsSearch;
     End;
 
 implementation

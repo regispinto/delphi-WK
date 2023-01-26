@@ -43,7 +43,7 @@ begin
 
   setConnection;
 
-  QryTable := TFDQuery.Create(Application);
+  QryTable := TFDQuery.Create(Nil);
   QryTable.Connection := FConnect.Connection;
 
   People := TPeople.Create(FConnect);
@@ -53,6 +53,7 @@ end;
 
 destructor TTables.Destroy;
 begin
+  QryTable.Destroy;
   inherited;
 end;
 

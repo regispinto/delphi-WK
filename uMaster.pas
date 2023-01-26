@@ -99,7 +99,10 @@ Uses uDM;
 
 procedure TfrmMaster.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  ThreadExecute;
+  FMasterClass.Qry.Destroy;
+  FMasterClass.People.Destroy;
+  FMasterClass.DTSource.Destroy;
+  FMasterClass.Address.Destroy;
 end;
 
 procedure TfrmMaster.FormCreate(Sender: TObject);
@@ -395,45 +398,34 @@ begin
 
       if FMasterClass.Qry.FieldByName('Integrado').IsNull then
       begin
-        try
-          fViaCep.ConsultarCEP(FMasterClass.Qry.FieldByName('DsCep').AsString);
+        fViaCep.ConsultarCEP(FMasterClass.Qry.FieldByName('DsCep').AsString);
 
-          Erro := fViaCep.RetornoCEP;
+        Erro := fViaCep.RetornoCEP;
 
-          SaveLog('MasterClassFunctions.ProcessAddressIntergration.FRetornoCEP: ' +
-            Erro);
+        if Erro = '' then
+        begin
+          // Validar se Integração Endereço já existe antes de incluir
+          IdEndereco := FMasterClass.Qry.FieldByName('IdEndereco').AsInteger;
 
-          if Erro = '' then
+          FMasterClass.Integration.Search(IdEndereco);
+          Erro := FMasterClass.Integration.Erro;
+
+          if (Erro = EmptyStr) and (FMasterClass.Integration.IdEndereco = 0) then
           begin
-            // Validar se Integração Endereço já existe antes de incluir
-            IdEndereco := FMasterClass.Qry.FieldByName('IdEndereco').AsInteger;
-
-            FMasterClass.Integration.Search(IdEndereco);
-            Erro := FMasterClass.Integration.Erro;
-
-            if (Erro = EmptyStr) and (FMasterClass.Integration.IdEndereco = 0) then
-            begin
-              FMasterClass.Integration.IdEndereco := IdEndereco;
-              FMasterClass.Integration.DsUf := fViaCep.DsUf;
-              FMasterClass.Integration.NmCidade := fViaCep.NmCidade;
-              FMasterClass.Integration.NmBairro := fViaCep.NmBairro;
-              FMasterClass.Integration.NmLogradouro := fViaCep.NmLogradouro;
-              FMasterClass.Integration.DsComplemento := fViaCep.DsComplemento;
-              FMasterClass.Integration.Insert;
-
-              Erro := FMasterClass.Integration.Erro;
-            end;
+            FMasterClass.Integration.IdEndereco := IdEndereco;
+            FMasterClass.Integration.DsUf := fViaCep.DsUf;
+            FMasterClass.Integration.NmCidade := fViaCep.NmCidade;
+            FMasterClass.Integration.NmBairro := fViaCep.NmBairro;
+            FMasterClass.Integration.NmLogradouro := fViaCep.NmLogradouro;
+            FMasterClass.Integration.DsComplemento := fViaCep.DsComplemento;
+            FMasterClass.Integration.Insert;
           end;
-        except
-          on E:Exception do
-              Erro := 'Falha ao pesquisar CEP: ' + FMasterClass.Qry.FieldByName('DsCep').AsString + CR +
-                'Erro: ' + e.ToString;
         end;
       end;
 
-      TThread.Synchronize(TThread.CurrentThread, procedure
+      TThread.Synchronize(nil, procedure
       begin
-        pgbProcess.Position := pgbProcess.Position + FMasterClass.Qry.RecNo;
+        pgbProcess.Position := FMasterClass.Qry.RecNo;
 
         stbFooter.Panels[0].Text := 'Integrando o endereço do CEP ' +
           FMasterClass.Qry.FieldByName('DsCEP').AsString + '...';
