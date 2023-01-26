@@ -171,7 +171,7 @@ object frmMaster: TfrmMaster
     Left = 0
     Top = 272
     Width = 709
-    Height = 221
+    Height = 200
     TabStop = False
     Align = alClient
     Color = clSilver
@@ -284,6 +284,14 @@ object frmMaster: TfrmMaster
       TabOrder = 2
       OnClick = btnExcluirClick
     end
+  end
+  object pgbProcess: TProgressBar
+    Left = 0
+    Top = 472
+    Width = 709
+    Height = 21
+    Align = alBottom
+    TabOrder = 4
   end
   object FDMemTablePeople: TFDMemTable
     AfterScroll = FDMemTablePeopleAfterScroll

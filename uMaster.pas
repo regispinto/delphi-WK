@@ -52,6 +52,7 @@ type
     tmiExcluir: TMenuItem;
     N2: TMenuItem;
     tmeThread: TTimer;
+    pgbProcess: TProgressBar;
 
     procedure FormCreate(Sender: TObject);
     procedure btnNovoClick(Sender: TObject);
@@ -367,6 +368,7 @@ begin
   begin
     stbFooter.Panels[0].Text := '';
     tmeThread.Enabled := True;
+    pgbProcess.Visible := False;
   end;
 end;
 
@@ -382,6 +384,9 @@ begin
 
     // Atualizar a Endereco_Integracao com base nas tabelas Pessoa e Endereco
     FMasterClass.RecordsSearch;
+
+    pgbProcess.Max := FMasterClass.Qry.RecordCount;
+    pgbProcess.Visible := True;
 
     while not FMasterClass.Qry.Eof do
     begin
@@ -419,12 +424,6 @@ begin
               Erro := FMasterClass.Integration.Erro;
             end;
           end;
-
-          TThread.Synchronize(TThread.CurrentThread, procedure
-          begin
-            stbFooter.Panels[0].Text := 'Integrando o endereço do CEP ' +
-              FMasterClass.Qry.FieldByName('DsCEP').AsString + '...';
-          end);
         except
           on E:Exception do
               Erro := 'Falha ao pesquisar CEP: ' + FMasterClass.Qry.FieldByName('DsCep').AsString + CR +
@@ -432,10 +431,17 @@ begin
         end;
       end;
 
+      TThread.Synchronize(TThread.CurrentThread, procedure
+      begin
+        pgbProcess.Position := pgbProcess.Position + FMasterClass.Qry.RecNo;
+
+        stbFooter.Panels[0].Text := 'Integrando o endereço do CEP ' +
+          FMasterClass.Qry.FieldByName('DsCEP').AsString + '...';
+      end);
+
       FMasterClass.Qry.Next;
     end;
   end);
-
   LThread.OnTerminate := ThreadEnd;
   LThread.Start;
 end;
