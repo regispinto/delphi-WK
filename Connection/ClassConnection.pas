@@ -39,7 +39,6 @@ type
       FSection: string;
       FErro: string;
       FLib: string;
-      FNewDB: Boolean;
 
    public
       property Connection: TFDConnection read FConnection write FConnection;
@@ -57,7 +56,6 @@ type
       property Section: string read FSection write FSection;
       property Erro: string read FErro write FErro;
       property Lib: string read Flib write Flib;
-      property NewDB: Boolean read FNewDB write FNewDB;
 
       constructor Create (Connection: TFDConnection);
       destructor Destroy; Override;
@@ -67,7 +65,7 @@ type
       function CreateFolderBD: string;
 
       procedure SetConnectDB(Connect: TConnect);
-      procedure ValidateDB;
+      procedure ExistDB;
       procedure CreateDB(Database: string='');
       procedure CreateSchema;
       procedure ActivateConnection(Database: string='');
@@ -165,41 +163,6 @@ begin
     FConnection.Params[6]) ;
 end;
 
-procedure TConnect.ValidateDB;
-begin
-  try
-    SaveLog('ClassConnection.ValidateDB - Validando existência do Banco de Dados');
-
-    FConnection.Connected := False;
-    FConnection.Connected := True;
-
-    FConnect.NewDB := False;
-    FConnect.Erro := '';
-  except
-    on E : EPgNativeException do
-      begin
-        if AnsiContainsStr(e.Message, 'database "db_pessoas" does not exist') then
-        begin
-          SaveLog('ClassConnection.ValidateDB - ' + e.Message);
-
-          FConnect.NewDB := True;
-          FConnect.Erro := EmptyStr;
-        end;
-
-        if AnsiContainsStr(e.Message, 'password authentication failed for user') then
-        begin
-          FConnect.NewDB := False;
-          FConnect.Erro := e.Message + ' ' + e.ClassName;
-        end;
-      end;
-    on E : Exception do
-      begin
-        FConnect.NewDB := False;
-        FConnect.Erro := 'Erro: ' + e.Message + ' Classe: ' + e.ClassName;
-      end;
-  end;
-end;
-
 procedure TConnect.ActivateConnection(Database: string);
 begin
   try
@@ -207,11 +170,53 @@ begin
     FConnection.Params.Values['Database'] := Database;
     FConnection.Connected := True;
   except
+    on E : EPgNativeException do
+      begin
+        if AnsiContainsStr(e.Message, 'database "db_pessoas" does not exist') then
+        begin
+          FConnect.Erro := EmptyStr;
+          SaveLog('ClassConnection.ValidateDB - ' + e.Message);
+        end;
+
+        if AnsiContainsStr(e.Message, 'password authentication failed for user') then
+        begin
+          FConnect.Erro := e.Message + ' ' + e.ClassName;
+          SaveLog('ClassConnection.ValidateDB - ' + FConnect.Erro);
+        end;
+      end;
     on E : Exception do
       begin
-        FConnect.Erro := e.Message;
-        SaveLog('ClassConnection.ActivateConnection: ' + CR + 'Falha de conexão');
+        FConnect.Erro := 'Erro: ' + e.Message + ' Classe: ' + e.ClassName;
+        SaveLog('ClassConnection.ValidateDB - ' + FConnect.Erro);
       end;
+  end;
+end;
+
+procedure TConnect.ExistDB;
+begin
+  try
+    Qry.Close;
+    Qry.SQL.Clear;
+    Qry.SQL.Add('SELECT datname FROM pg_database');
+    Qry.SQL.Add('WHERE datname LIKE ' + QuotedStr(Database));
+
+    SaveLog('ClassConnection.ExistDB: ' + CR + Qry.SQL.Text);
+
+    Qry.Open;
+
+    if Qry.RowsAffected = 0 then
+    begin
+      FConnect.Erro := 'Banco de dados ' + Database + ' não existe, deve ser criado...';
+      SaveLog('ClassConnection.ExistDB - ' + FConnect.Erro);
+    end
+    else
+    begin
+      FConnect.Erro := '';
+      SaveLog('ClassConnection.ExistDB - Banco de dados ' + Database + ' já existe');
+    end;
+  except
+    on e:Exception do
+      FConnect.Erro := e.ToString;
   end;
 end;
 
@@ -221,7 +226,7 @@ begin
 
   ActivateConnection;
 
-  if FConnect.Erro = EmptyStr then
+  if FConnect.Erro <> EmptyStr then
   begin
     try
       Qry.SQL.Clear;

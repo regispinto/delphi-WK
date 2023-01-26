@@ -59,25 +59,16 @@ begin
     end;
 
     FConnect.SetConnectDB(FConnect);
-    FConnect.ValidateDB;
-
-    SaveLog('uDM.DataModuleCreate - Status da Conexão: ' +
-      BoolToStr(FConnect.Connection.Connected, True));
-
-    if FConnect.NewDB then
+    FConnect.ActivateConnection();
+    if FConnect.Erro = EmptyStr then
     begin
-      FConnect.CreateDB;
+      FConnect.ExistDB;
 
-      SaveLog('uDM.DataModuleCreate - Retorno FConnect.CreateDB: ' +
-        'FConnect.Erro: ' + FConnect.Erro);
+      if FConnect.Erro <> EmptyStr then
+        FConnect.CreateDB;
 
-      if FConnect.Erro = EmptyStr then
-      begin
-        FConnect.CreateSchema;
-
-        if FConnect.Erro = EmptyStr then
-          StartCreateTabels;
-      end;
+      FConnect.CreateSchema;
+      StartCreateTabels;
     end;
   end;
 
