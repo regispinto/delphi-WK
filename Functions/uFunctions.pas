@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.StrUtils,
-  Data.DB, Vcl.Grids, FireDAC.Comp.Client, IniFiles;
+  Data.DB, Vcl.Grids, FireDAC.Comp.Client, IniFiles, WinSvc;
 
   function ChangePointToComma(Value: string): string;
   function SaveLog(Log: string; Separator: Boolean=False): string;
@@ -13,6 +13,7 @@ uses
   function IniParamsNOTExists(FileName: string='Config.ini'): Boolean;
   function GetFileFromUrl(Url: String): String;
   function LoadIni(Key1, Key2, DefaultValue: string; FileName: string='config.ini'): String;
+  function StatusService(Service: PWideChar): Boolean;
 
   procedure SaveIni(Key1, Key2, aTexto: string; FileName: string='config.ini');
 
@@ -62,7 +63,7 @@ end;
 
 function IniParamsNOTExists(FileName: string='Config.ini'): Boolean;
 begin
-  SaveLog('uFunctions/IniParamsNOTExists -> Valida se o ' + FileName + ' existe' );
+  SaveLog('uFunctions/IniParamsNOTExists -> Validando se o ' + FileName + ' existe');
 
   if (FileExists(FileName)) then
   begin
@@ -85,29 +86,28 @@ begin
         end;
 
     1:  begin
-          SaveIni('BANCO', 'Port', '3306');
-          SaveIni('BANCO', 'Database', 'db_dados');
-          SaveIni('BANCO', 'Server', '127.0.0.1');
-          SaveIni('BANCO', 'User', 'root');
-          SaveIni('BANCO', 'Pass', 'root');
+          SaveIni('BANCO', 'port', '3306');
+          SaveIni('BANCO', 'database', 'db_dados');
+          SaveIni('BANCO', 'server', '127.0.0.1');
+          SaveIni('BANCO', 'user_name', 'root');
+          SaveIni('BANCO', 'password', 'root');
         end;
 
     2:  begin
-          SaveIni('BANCO', 'Port', '3350');
-          SaveIni('BANCO', 'Database', 'db_dados.fdb');
-          SaveIni('BANCO', 'Server', '127.0.0.1');
-          SaveIni('BANCO', 'User', 'SYSDBA');
-          SaveIni('BANCO', 'Pass', 'masterkey');
+          SaveIni('BANCO', 'port', '3350');
+          SaveIni('BANCO', 'database', 'db_dados.fdb');
+          SaveIni('BANCO', 'server', '127.0.0.1');
+          SaveIni('BANCO', 'user_name', 'SYSDBA');
+          SaveIni('BANCO', 'password', 'masterkey');
         end;
 
     3:  begin
-          SaveIni('BANCO', 'Port', '5432');
-          SaveIni('BANCO', 'Database', 'db_pessoas');
-          SaveIni('BANCO', 'Server', '127.0.0.1');
-          SaveIni('BANCO', 'User', 'postgres');
-          SaveIni('BANCO', 'Pass', '12345678');
-          SaveIni('BANCO', 'ODBC', ExtractFilePath(ParamStr(0)) + 'lib');
-          SaveIni('BANCO', 'SChema', 'db_agenda');
+          SaveIni('BANCO', 'port', '5432');
+          SaveIni('BANCO', 'database', 'db_pessoas');
+          SaveIni('BANCO', 'server', '127.0.0.1');
+          SaveIni('BANCO', 'user_name', 'postgres');
+          SaveIni('BANCO', 'password', '12345678');
+          SaveIni('BANCO', 'obdc', ExtractFilePath(ParamStr(0)) + 'lib');
         end;
   end;
 end;
@@ -220,6 +220,28 @@ begin
   pos := LastDelimiter('/', Url);
 
   Result := Copy(url, pos + 1, MaxInt);
+end;
+
+function StatusService(Service: PWideChar): Boolean;
+var
+  HSC,
+  HS:THandle;
+  SS:SERVICE_STATUS;
+
+begin
+ HSC := OpenSCManager(nil, nil, SC_Manager_Connect);
+ HS  := OpenService(HSC, Service, SC_Manager_All_Access);
+
+ if QueryServiceStatus(HS, SS) then
+ begin
+   Case SS.dwCurrentState of
+     Service_Stopped : ; // parado
+     Service_Paused  : ; // pausado
+     Service_Running : ; // rodando
+   end;
+ end;
+ CloseServiceHandle(HS);
+ CloseServiceHandle(HSC);
 end;
 
 end.

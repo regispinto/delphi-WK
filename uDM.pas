@@ -26,7 +26,8 @@ type
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private declarations }
-    function ValidatePostgre: Boolean;
+    function ValidatePostgreSQL: Boolean;
+
     procedure StartCreateTabels;
   public
     { Public declarations }
@@ -49,7 +50,7 @@ begin
   FConnect.DriverID := 'PG';
   FDPhysPgDriverLink.VendorHome := '.\';
 
-  if ValidatePostgre then
+  if ValidatePostgreSQL then
   begin
     if IniParamsNOTExists then
     begin
@@ -58,13 +59,17 @@ begin
     end;
 
     FConnect.SetConnectDB(FConnect);
-    FConnect.ExistDB;
+    FConnect.ValidateDB;
 
-    // Se FConnect.ExistDB atribuir valor a FConnect.Erro,
-    // significa que o Banco de Dados não existe e deverá ser criado
-    if FConnect.Erro <> EmptyStr then
+    SaveLog('uDM.DataModuleCreate - Status da Conexão: ' +
+      BoolToStr(FConnect.Connection.Connected, True));
+
+    if FConnect.NewDB then
     begin
       FConnect.CreateDB;
+
+      SaveLog('uDM.DataModuleCreate - Retorno FConnect.CreateDB: ' +
+        'FConnect.Erro: ' + FConnect.Erro);
 
       if FConnect.Erro = EmptyStr then
       begin
@@ -74,11 +79,16 @@ begin
           StartCreateTabels;
       end;
     end;
-  end
-  else
+  end;
+
+  if FConnect.Erro <> EmptyStr then
   begin
-    Application.MessageBox('DLLs relaciondas ao Postgre não foram localizadas' + CR +
-      'Favor verificar', 'Base de Pessoas', MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
+    Application.MessageBox('Ocorreu um erro de conexão' + CR +
+      'Favor verificar!', 'Abertura', MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
+
+    SaveLog('uDM.DataModuleCreate - Erro de conexão' + CR +
+      'Erro: ' + FConnect.Erro);
+
     Application.Terminate;
   end;
 end;
@@ -100,15 +110,21 @@ begin
   end;
 end;
 
-function TDM.ValidatePostgre: Boolean;
+function TDM.ValidatePostgreSQL: Boolean;
 var
-  LDll, Folder: string;
+  LDll,
+  Folder: string;
 
 begin
+  SaveLog('Validando existência das DLLs do PostgreSQL');
+
   Folder := ExtractFilePath(Application.ExeName);
   LDll := Folder + 'lib\' + 'libpq.dll';
 
-  Result := (FConnect.getLibFolder(Folder) and FConnect.getVendorLib(LDll))
+  Result := (FConnect.getLibFolder(Folder) and FConnect.getVendorLib(LDll));
+
+  if Result = False then
+    FConnect.Erro := 'DLLs do PostgreSQL não foram localizadas. ' + 'Favor verificar!';
 end;
 
 end.

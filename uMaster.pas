@@ -105,9 +105,12 @@ procedure TfrmMaster.FormCreate(Sender: TObject);
 begin
   FConnect := DM.FConnect;
 
-  FMasterClass := TMasterClass.Create(FConnect);
-  FMasterClass.MemTable := FDMemTablePeople;
-  FMasterClass.InsertIntoTemporaryTable;
+  if FConnect.Connection.Connected then
+    begin
+      FMasterClass := TMasterClass.Create(FConnect);
+      FMasterClass.MemTable := FDMemTablePeople;
+      FMasterClass.InsertIntoTemporaryTable;
+    end;
 end;
 
 procedure TfrmMaster.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -382,7 +385,7 @@ begin
 
     while not FMasterClass.Qry.Eof do
     begin
-      SaveLog('Verificando a integração do CEP: ' +
+      SaveLog('uMaster.ThreadExecute - Verificando a integração do CEP: ' +
         FMasterClass.Qry.FieldByName('DsCep').AsString);
 
       if FMasterClass.Qry.FieldByName('Integrado').IsNull then

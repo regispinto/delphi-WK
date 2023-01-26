@@ -194,7 +194,6 @@ object frmMaster: TfrmMaster
         Expanded = False
         FieldName = 'idpessoa'
         Title.Caption = 'IdPessoa'
-        Width = -1
         Visible = False
       end
       item

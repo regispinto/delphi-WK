@@ -5,11 +5,7 @@ object DM: TDM
   Width = 554
   object FDConnection: TFDConnection
     Params.Strings = (
-      'DriverID=PG'
-      'Password=12345678'
-      'Server=127.0.0.1'
-      'User_Name=postgres'
-      'Database=db_pessoas')
+      'Server=127.0.0.1')
     ResourceOptions.AssignedValues = [rvAutoConnect]
     ResourceOptions.AutoConnect = False
     TxOptions.Isolation = xiReadCommitted

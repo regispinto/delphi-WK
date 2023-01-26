@@ -39,6 +39,7 @@ type
       FSection: string;
       FErro: string;
       FLib: string;
+      FNewDB: Boolean;
 
    public
       property Connection: TFDConnection read FConnection write FConnection;
@@ -56,6 +57,7 @@ type
       property Section: string read FSection write FSection;
       property Erro: string read FErro write FErro;
       property Lib: string read Flib write Flib;
+      property NewDB: Boolean read FNewDB write FNewDB;
 
       constructor Create (Connection: TFDConnection);
       destructor Destroy; Override;
@@ -65,12 +67,10 @@ type
       function CreateFolderBD: string;
 
       procedure SetConnectDB(Connect: TConnect);
+      procedure ValidateDB;
       procedure CreateDB(Database: string='');
       procedure CreateSchema;
-      procedure ConnectionDB;
       procedure ActivateConnection(Database: string='');
-
-      procedure ExistDB;
    end;
 
 implementation
@@ -110,13 +110,13 @@ begin
        end;
 
     1: begin
-        FServer   := LoadIni('BANCO', 'Server', '127.0.0.1');
-        FUser     := LoadIni('BANCO', 'UserName', 'root');
-        FPass     := LoadIni('BANCO', 'Password', 'root');
-        FPort     := LoadIni('BANCO', 'Port', '3306');
-        FDatabase := LoadIni('BANCO', 'Database', 'db_dados');
+        FServer   := LoadIni('BANCO', 'server', '127.0.0.1');
+        FUser     := LoadIni('BANCO', 'user_name', 'root');
+        FPass     := LoadIni('BANCO', 'password', 'root');
+        FPort     := LoadIni('BANCO', 'port', '3306');
+        FDatabase := LoadIni('BANCO', 'database', 'db_dados');
 
-        FConnection.Params.Add('Server=' + FServer);
+        FConnection.Params.Add('server=' + FServer);
         FConnection.Params.Add('user_name=' + FUser);
         FConnection.Params.Add('password=' + FPass);
         FConnection.Params.Add('port=' + FPort);
@@ -124,12 +124,12 @@ begin
        end;
 
     2: begin
-        FServer := LoadIni('BANCO', 'Server', '127.0.0.1');
-        FUser   := LoadIni('BANCO', 'UserName', 'SYSDBA');
-        FPass   := LoadIni('BANCO', 'Password', 'masterkey');
-        FPort   := LoadIni('BANCO', 'Port', '3050');
+        FServer := LoadIni('BANCO', 'server', '127.0.0.1');
+        FUser   := LoadIni('BANCO', 'user_name', 'SYSDBA');
+        FPass   := LoadIni('BANCO', 'password', 'masterkey');
+        FPort   := LoadIni('BANCO', 'port', '3050');
 
-        FConnection.Params.Add('Server='+ FServer);
+        FConnection.Params.Add('server='+ FServer);
         FConnection.Params.Add('user_name='+ FUser);
         FConnection.Params.Add('password='+ FPass);
         FConnection.Params.Add('port='+ FPort);
@@ -137,14 +137,14 @@ begin
        end;
 
     3: begin
-        FServer   := LoadIni('BANCO', 'Server', '127.0.0.1');
-        FUser     := LoadIni('BANCO', 'UserName', 'postgres');
-        FPass     := LoadIni('BANCO', 'Password', '12345678');
-        FPort     := LoadIni('BANCO', 'Port', '5432');
-        FDatabase := LoadIni('BANCO', 'Database', 'db_pessoas');
-        FSchema   := LoadIni('BANCO', 'Schema', 'db_agenda');
+        FServer   := LoadIni('BANCO', 'server', '127.0.0.1');
+        FUser     := LoadIni('BANCO', 'user_name', 'postgres');
+        FPass     := LoadIni('BANCO', 'password', '12345678');
+        FPort     := LoadIni('BANCO', 'port', '5432');
+        FDatabase := LoadIni('BANCO', 'database', 'db_pessoas');
+        FSchema   := 'db_agenda';
 
-        FConnection.Params.Add('Server=' + FServer);
+        FConnection.Params.Add('server=' + FServer);
         FConnection.Params.Add('user_name=' + FUser);
         FConnection.Params.Add('password=' + FPass);
         FConnection.Params.Add('port=' + FPort);
@@ -165,118 +165,129 @@ begin
     FConnection.Params[6]) ;
 end;
 
-procedure TConnect.ConnectionDB;
-var
-  LTexto: string;
-
+procedure TConnect.ValidateDB;
 begin
   try
-    ActivateConnection(FConnect.Database);
+    SaveLog('ClassConnection.ValidateDB - Validando existência do Banco de Dados');
 
-    Erro := '';
-    SaveLog('ClassConnection.ConnectionDB -> Conexão realizada com sucesso');
-  Except
-    on E:Exception do
-      begin
-        lTexto := 'Erro: ' + e.Message + ' Classe: ' + e.ClassName;
-        Erro := LTexto;
-        SaveLog('ClassConnection.ConnectionDB -> ' + LTexto);
-      end;
-  end;
-end;
-
-procedure TConnect.ExistDB;
-begin
-  try
     FConnection.Connected := False;
-    FConnection.Params.Values['Database'] := Database;
     FConnection.Connected := True;
 
+    FConnect.NewDB := False;
     FConnect.Erro := '';
-  Except
-    on E:Exception do
+  except
+    on E : EPgNativeException do
       begin
+        if AnsiContainsStr(e.Message, 'database "db_pessoas" does not exist') then
+        begin
+          SaveLog('ClassConnection.ValidateDB - ' + e.Message);
+
+          FConnect.NewDB := True;
+          FConnect.Erro := EmptyStr;
+        end;
+
+        if AnsiContainsStr(e.Message, 'password authentication failed for user') then
+        begin
+          FConnect.NewDB := False;
+          FConnect.Erro := e.Message + ' ' + e.ClassName;
+        end;
+      end;
+    on E : Exception do
+      begin
+        FConnect.NewDB := False;
         FConnect.Erro := 'Erro: ' + e.Message + ' Classe: ' + e.ClassName;
-        SaveLog('ClassConnection.ExistDB -> ' + FConnect.Erro);
       end;
   end;
 end;
 
 procedure TConnect.ActivateConnection(Database: string);
 begin
-  FConnection.Connected := False;
-  FConnection.Params.Values['Database'] := Database;
-  FConnection.Connected := True;
+  try
+    FConnection.Connected := False;
+    FConnection.Params.Values['Database'] := Database;
+    FConnection.Connected := True;
+  except
+    on E : Exception do
+      begin
+        FConnect.Erro := e.Message;
+        SaveLog('ClassConnection.ActivateConnection: ' + CR + 'Falha de conexão');
+      end;
+  end;
 end;
 
 procedure TConnect.CreateDB(Database: string='');
 begin
-  try
-    ActivateConnection;
+  SaveLog('ClassConnection.CreateDB - Criando Banco de Dados ' + FDatabase + '...');
 
-    Qry.SQL.Clear;
-    Qry.SQL.Add('create database ' + FDatabase);
-    Qry.SQL.Add('WITH');
-    Qry.SQL.Add('OWNER = postgres');
-    Qry.SQL.Add('ENCODING = UTF8');
-    Qry.SQL.Add('LC_COLLATE = ' + QuotedStr('Portuguese_Brazil.1252'));
-    Qry.SQL.Add('LC_CTYPE = ' + QuotedStr('Portuguese_Brazil.1252'));
-    Qry.SQL.Add('TABLESPACE = pg_default');
-    Qry.SQL.Add('CONNECTION LIMIT = -1');
+  ActivateConnection;
 
-    SaveLog('ClassConnection.CreateDatabase: ' + CR + Qry.SQL.Text);
+  if FConnect.Erro = EmptyStr then
+  begin
+    try
+      Qry.SQL.Clear;
+      Qry.SQL.Add('CREATE DATABASE ' + FDatabase);
+      Qry.SQL.Add('WITH');
+      Qry.SQL.Add('OWNER = postgres');
+      Qry.SQL.Add('ENCODING = UTF8');
+      Qry.SQL.Add('LC_COLLATE = ' + QuotedStr('Portuguese_Brazil.1252'));
+      Qry.SQL.Add('LC_CTYPE = ' + QuotedStr('Portuguese_Brazil.1252'));
+      Qry.SQL.Add('TABLESPACE = pg_default');
+      Qry.SQL.Add('CONNECTION LIMIT = -1');
 
-    Qry.Prepare;
-    Qry.ExecSQL;
+      SaveLog('ClassConnection.CreateDB: ' + CR + Qry.SQL.Text);
 
-    FErro := '';
+      Qry.Prepare;
+      Qry.ExecSQL;
 
-    SaveLog('ClassConnection.CreateDatabase: ' + CR + 'Banco de dados ' + FDatabase + ' criado com sucesso');
-  except
-    on e:Exception do
-      begin
-        FErro := 'Erro ao criar o banco de dados ' + FDatabase + CR +
-          'Erro: ' + CR + e.ToString;
-        SaveLog('ClassConnection.CreateDatabase: ' + CR + FErro);
-      end;
+      FErro := '';
+
+      SaveLog('ClassConnection.CreateDB: ' + CR + 'Banco de dados ' + FDatabase +
+        ' criado com sucesso');
+    except
+      on e:Exception do
+        begin
+          FErro := 'Erro ao criar o banco de dados ' + FDatabase + CR +
+            'Erro: ' + CR + e.ToString;
+          SaveLog('ClassConnection.CreateDatabase: ' + CR + FErro);
+        end;
+    end;
   end;
 end;
 
 procedure TConnect.CreateSchema;
 begin
-  try
-    ActivateConnection(FConnect.Database);
+  SaveLog('ClassConnection.CreateDB - Criando Banco de Dados ' + FDatabase + '...');
 
-    Qry.SQL.Clear;
-    Qry.SQL.Add('create schema if not exists ' + SCHEMA);
+  ActivateConnection(FConnect.Database);
 
-    SaveLog('ClassConnection.CreateSchema: ' + CR + Qry.SQL.Text);
+  if FConnect.Erro = EmptyStr then
+  begin
+    try
+      Qry.SQL.Clear;
+      Qry.SQL.Add('create schema if not exists ' + SCHEMA);
 
-    Qry.Prepare;
-    Qry.ExecSQL;
+      SaveLog('ClassConnection.CreateSchema: ' + CR + Qry.SQL.Text);
 
-    FErro := '';
+      Qry.Prepare;
+      Qry.ExecSQL;
 
-    SaveLog('ClassConnection.CreateSchema: ' + CR + 'Schema ' + SCHEMA + ' criado com sucesso');
-  except
-    on e:Exception do
-      begin
-        FErro := 'Erro ao criar o schema ' + FDatabase + CR +
-          'Erro: ' + CR + e.ToString;
-        SaveLog('ClassConnection.CreateSchema: ' + CR + FErro);
-      end;
+      FErro := '';
+
+      SaveLog('ClassConnection.CreateSchema: ' + CR + 'Schema ' + SCHEMA + ' criado com sucesso');
+    except
+      on e:Exception do
+        begin
+          FErro := 'Erro ao criar o schema ' + FDatabase + CR +
+            'Erro: ' + CR + e.ToString;
+          SaveLog('ClassConnection.CreateSchema: ' + CR + FErro);
+        end;
+    end;
   end;
 end;
 
 function TConnect.getLibFolder(Folder: string): Boolean;
 begin
-  Result := True;
-
-  if not DirectoryExists(Folder) then
-    begin
-      ShowMessage('Pasta ' + Folder + ' não localizada' +#13+ 'Favor verificar!');
-      Result := False;
-    end;
+  Result := DirectoryExists(Folder);
 end;
 
 Function TConnect.CreateFolderBD: string;
@@ -295,13 +306,7 @@ end;
 
 function TConnect.getVendorLib(Dll: String): Boolean;
 begin
-  Result := True;
-
-  if not (FileExists(Dll)) then
-    begin
-      ShowMessage('Arquivo ' + Dll + ' não localizada.' +#13+ 'Favor verificar!');
-      Result := False;
-    end;
+  Result := FileExists(Dll);
 end;
 
 end.
