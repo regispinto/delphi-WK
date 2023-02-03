@@ -93,16 +93,16 @@ begin
     QryPeople.Prepare;
     QryPeople.ExecSQL;
 
-    SaveLog('ClassPeople.CreateTablePessoa: Tabela pessoa criada com sucesso');
+    SaveLog('ClassPeople.CreateTablePessoa: Tabela PESSOA criada com sucesso');
 
     Erro := '';
 
     FConnection.Commit;
   except
     on e:Exception do begin
-      Erro := 'Erro ao criar a tabela pessoa' + CR + 'Erro: ' + e.ToString;
-      SaveLog('ClassPeople.CreateTablePessoa: ' + CR + Erro);
-
+      Erro := 'Erro ao criar a tabela PESSOA';
+      SaveLog('ClassPeople.CreateTablePessoa: ' + Erro + CR +
+        'Erro: ' + e.ToString);
       FConnection.Rollback;
     end;
   end;
@@ -142,10 +142,8 @@ begin
   except
     on e: Exception do
       begin
-        Erro := 'Erro ao inserir pessoa (' + IntToStr(FIdPessoa) + ')' + CR +
-          'Erro: ' + E.Message;
-
-        SaveLog('ClassPeople.Insert: ' + Erro);
+        Erro := 'Erro ao inserir PESSOA (' + IntToStr(FIdPessoa) + ')';
+        SaveLog('ClassPeople.Insert: ' + Erro + CR + 'Erro: ' + E.Message);
         FConnection.Rollback;
       end;
   end;
@@ -188,7 +186,7 @@ begin
   except
     on E:Exception do
       begin
-        raise Exception.Create('Erro ao alterar pessoa' + CR + e.ToString);
+        raise Exception.Create('Erro ao alterar PESSOA' + CR + e.ToString);
         FConnection.Rollback;
       end;
   end;
@@ -224,7 +222,7 @@ begin
       FErro := 'Pessoa não localizada';
   except
     on E:Exception do
-      raise Exception.Create('Erro ao pesquisar pessoa' + CR + e.ToString);
+      raise Exception.Create('Erro ao pesquisar PESSOA' + CR + e.ToString);
   end;
 end;
 

@@ -12,7 +12,7 @@ uses
   FireDAC.DatS, FireDAC.Phys.Intf, FireDAC.DApt.Intf, FireDAC.Comp.DataSet,
   FireDAC.Comp.Client, FireDAC.Stan.StorageBin, FireDAC.Stan.Async, FireDAC.DApt,
 
-  uFunctions, uViaCEP, uMasterFunctions, ClassConnection;
+  uFunctions, ClassConnection, uMasterFunctions, ClasseViaCep;
 
 type
   TfrmMaster = class(TForm)
@@ -53,6 +53,7 @@ type
     N2: TMenuItem;
     tmeThread: TTimer;
     pgbProcess: TProgressBar;
+    FDMemTablePeopleIntegrado: TIntegerField;
 
     procedure FormCreate(Sender: TObject);
     procedure btnNovoClick(Sender: TObject);
@@ -75,10 +76,9 @@ type
 
   private
     { Private declarations }
+
     procedure ObjectSet;
-    procedure ValidateFields(var Erro: string);
-    procedure ThreadExecute;
-    procedure ThreadEnd(Sender: TObject);
+    procedure ValidateFields;
     procedure DispalyFooter;
   public
     { Public declarations }
@@ -89,7 +89,6 @@ var
 
   FConnect: TConnect;
   FMasterClass: TMasterClass;
-  LThread: TThread;
 
 implementation
 
@@ -113,7 +112,7 @@ begin
     begin
       FMasterClass := TMasterClass.Create(FConnect);
       FMasterClass.MemTable := FDMemTablePeople;
-      FMasterClass.InsertIntoTemporaryTable;
+      FDMemTablePeople.Active := True;
     end;
 end;
 
@@ -186,76 +185,76 @@ begin
 end;
 
 procedure TfrmMaster.btnGravarClick(Sender: TObject);
-var
-  Operation: Integer;
-  Erro: string;
-
 begin
-  ValidateFields(Erro);
+  ValidateFields;
 
-  if Erro = EmptyStr then
+  if FMasterClass.Erro = EmptyStr then
   begin
     FMasterClass.NaturePerson := cbxNatureza.ItemIndex;
     FMasterClass.RegistrationDate := dtpDataRegistro.Date;
     FMasterClass.ProcessUpdate;
 
     if FMasterClass.Erro = EmptyStr then
-      ObjectSet;
-  end
-  else
-    Application.MessageBox(PChar(Erro), 'Base de Pessoas', MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
+      ObjectSet
+  end;
+
+  if FMasterClass.Erro <> EmptyStr then
+    Application.MessageBox(PChar(FMasterClass.Erro),
+      'Base de Pessoas', MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
 end;
 
-procedure TfrmMaster.ValidateFields(var Erro: string);
+procedure TfrmMaster.ValidateFields;
 begin
+  FMasterClass.Erro := EmptyStr;
+
   if cbxNatureza.ItemIndex = -1 then
   begin
-    Erro := 'Favor informar o campo Natureza';
+    FMasterClass.Erro := 'Favor informar o campo Natureza';
     cbxNatureza.SetFocus;
     Exit;
   end;
 
   if dbeDocumento.Field.IsNull then
   begin
-    Erro := 'Favor informar o campo Documento';
+    FMasterClass.Erro := 'Favor informar o campo Documento';
     dbeDocumento.SetFocus;
     Exit;
   end;
 
   if dbeNome1.Field.IsNull then
   begin
-    Erro := 'Favor informar o campo Nome1';
+    FMasterClass.Erro := 'Favor informar o campo Nome1';
     dbeNome1.SetFocus;
     Exit;
   end;
 
   if dbeNome2.Field.IsNull then
   begin
-    Erro := 'Favor informar o campo Nome2';
+    FMasterClass.Erro := 'Favor informar o campo Nome2';
     dbeNome2.SetFocus;
     Exit;
   end;
 
   if dbeCEP.Field.IsNull then
   begin
-    Erro := 'Favor informar o campo CEP';
+    FMasterClass.Erro := 'Favor informar o campo CEP';
     dbeCEP.SetFocus;
     Exit;
   end;
 
   if (Length(dbeCEP.Field.AsString) <> 8) then
   begin
-    Erro := 'O campo CEP precisa ter exatamente 8 digitos';
+    FMasterClass.Erro := 'O campo CEP precisa ter exatamente 8 digitos';
     dbeCEP.SetFocus;
     Exit;
   end
   else
   begin
-    fViaCep.ConsultarCEP(dbeCEP.Field.AsString);
+    FMasterClass.FCEP.SearchZipCode(dbeCEP.Field.AsString);
 
-    if fViaCep.RetornoCEP <> EmptyStr then
+    if FCEP.ZipCodeError = EmptyStr then
     begin
-      Erro := fViaCep.RetornoCEP;
+      FMasterClass.Erro := FCEP.ZipCodeError;
       dbeCEP.SetFocus;
       Exit;
     end;
@@ -355,87 +354,23 @@ end;
 
 procedure TfrmMaster.tmeThreadTimer(Sender: TObject);
 begin
-  ThreadExecute;
+  if FDMemTablePeople.RecordCount > 0 then
+  begin
+    tmeThread.Enabled := False;
+
+    FMasterClass.ObjSender := frmMaster;
+    FMasterClass.ProgressBar := pgbProcess;
+    FMasterClass.StatusBar := stbFooter;
+
+    FMasterClass.ThreadExecute;
+
+    tmeThread.Enabled := True;
+  end;
 end;
 
 procedure TfrmMaster.tmiExcluirClick(Sender: TObject);
 begin
   FMasterClass.ProcessDeleteMultipleRecords;
-end;
-
-procedure TfrmMaster.ThreadEnd(Sender: TObject);
-begin
-  if Assigned(TThread(Sender).FatalException) then
-    showmessage('Erro de execução ' + Exception(TThread(Sender).FatalException).Message)
-  else
-  begin
-    stbFooter.Panels[0].Text := '';
-    tmeThread.Enabled := True;
-    pgbProcess.Visible := False;
-  end;
-end;
-
-procedure TfrmMaster.ThreadExecute;
-var
-  IdEndereco: Integer;
-  Erro: string;
-
-begin
-  LThread := TThread.CreateAnonymousThread(procedure
-  begin
-    tmeThread.Enabled := False;
-
-    // Atualizar a Endereco_Integracao com base nas tabelas Pessoa e Endereco
-    FMasterClass.RecordsSearch;
-
-    pgbProcess.Max := FMasterClass.Qry.RecordCount;
-    pgbProcess.Visible := True;
-
-    while not FMasterClass.Qry.Eof do
-    begin
-      SaveLog('uMaster.ThreadExecute - Verificando a integração do CEP: ' +
-        FMasterClass.Qry.FieldByName('DsCep').AsString);
-
-      if FMasterClass.Qry.FieldByName('Integrado').IsNull then
-      begin
-        fViaCep.ConsultarCEP(FMasterClass.Qry.FieldByName('DsCep').AsString);
-
-        Erro := fViaCep.RetornoCEP;
-
-        if Erro = '' then
-        begin
-          // Validar se Integração Endereço já existe antes de incluir
-          IdEndereco := FMasterClass.Qry.FieldByName('IdEndereco').AsInteger;
-
-          FMasterClass.Integration.Search(IdEndereco);
-          Erro := FMasterClass.Integration.Erro;
-
-          if (Erro = EmptyStr) and (FMasterClass.Integration.IdEndereco = 0) then
-          begin
-            FMasterClass.Integration.IdEndereco := IdEndereco;
-            FMasterClass.Integration.DsUf := fViaCep.DsUf;
-            FMasterClass.Integration.NmCidade := fViaCep.NmCidade;
-            FMasterClass.Integration.NmBairro := fViaCep.NmBairro;
-            FMasterClass.Integration.NmLogradouro := fViaCep.NmLogradouro;
-            FMasterClass.Integration.DsComplemento := fViaCep.DsComplemento;
-            FMasterClass.Integration.Insert;
-          end;
-        end;
-      end;
-
-      TThread.Synchronize(nil, procedure
-      begin
-        pgbProcess.Position := FMasterClass.Qry.RecNo;
-
-        stbFooter.Panels[0].Text := 'Integrando o endereço do CEP ' +
-          FMasterClass.Qry.FieldByName('DsCEP').AsString + '...';
-      end);
-
-      FMasterClass.Qry.Next;
-    end;
-  end);
-  LThread.OnTerminate := ThreadEnd;
-  LThread.Start;
 end;
 
 procedure TfrmMaster.DispalyFooter;

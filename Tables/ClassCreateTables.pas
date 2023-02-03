@@ -61,38 +61,53 @@ procedure TTables.CreateDBTables;
 begin
   getTables;
 
-  if not QryTable.Locate('table_name', 'pessoa', []) then
+  if QryTable.Locate('table_name', 'pessoa', []) then
+  begin
+    SaveLog('Tables.CreateDBTables: ' + 'QryTable.Locate(table_name, pessoa, [])');
+    SaveLog('Tables.CreateDBTables: ' + 'Tabela pessoa já existe');
+  end
+  else
   begin
     People.CreateTablePeople;
 
     if People.Erro  <> EmptyStr then
     begin
-      Application.MessageBox(PChar(People.Erro + CR + 'Favor verificar'), 'Base de Pessoas',
-         MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
+      Application.MessageBox(PChar(People.Erro + '. Favor verificar'),
+        'Base de Pessoas', MB_ICONERROR + MB_SYSTEMMODAL);
       Application.Terminate;
     end;
   end;
   //
-  if not QryTable.Locate('table_name', 'endereco', []) then
+  if QryTable.Locate('table_name', 'endereco', []) then
+  begin
+    SaveLog('Tables.CreateDBTables: ' + 'QryTable.Locate(table_name, endereco, [])');
+    SaveLog('Tables.CreateDBTables: ' + 'Tabela endereco já existe');
+  end
+  else
   begin
     Address.CreateTableAddress;
 
     if Address.Erro <> EmptyStr then
     begin
-      Application.MessageBox(PChar(Address.Erro + CR + 'Favor verificar'), 'Base de Pessoas',
-          MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
+      Application.MessageBox(PChar(Address.Erro + '. Favor verificar'),
+        'Base de Pessoas', MB_ICONERROR + MB_SYSTEMMODAL);
       Application.Terminate;
     end;
   end;
   //
-  if not QryTable.Locate('table_name', 'endereco_integracao', []) then
+  if QryTable.Locate('table_name', 'endereco_integracao', []) then
+  begin
+    SaveLog('Tables.CreateDBTables: ' + 'QryTable.Locate(table_name, endereco_integracao, [])');
+    SaveLog('Tables.CreateDBTables: ' + 'Tabela endereco_integracao já existe');
+  end
+  else
   begin
     Integration.CreateTableIntegrationAddress;
 
     if Integration.Erro <> EmptyStr then
     begin
-      Application.MessageBox(PChar(Integration.Erro + CR + 'Favor verificar'), 'Base de Pessoas',
-         MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
+      Application.MessageBox(PChar(Integration.Erro + '. Favor verificar'),
+        'Base de Pessoas', MB_ICONERROR + MB_SYSTEMMODAL);
       Application.Terminate;
     end;
   end;

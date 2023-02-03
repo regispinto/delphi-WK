@@ -5,11 +5,22 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.StrUtils,
-  Data.DB, Vcl.Grids, FireDAC.Comp.Client, IniFiles, Vcl.Samples.Gauges,
+  Data.DB, Vcl.Grids, FireDAC.Comp.Client, IniFiles, Vcl.Samples.Gauges, Vcl.ComCtrls,
 
-  FireDAC.Phys.MySQL,
+  uFunctions, ClasseViaCep, ClassConnection, ClassPeople, ClassIntegrationAddress;
 
-  uFunctions, uViaCEP, ClassConnection, ClassPeople, ClassIntegrationAddress;
+  type
+    TRecords = record
+      IdPessoa : Integer;
+      flNatureza : Integer;
+      dsDocuemtno : string;
+      nmPrimeiro : string;
+      nmSegundo : string;
+      dtRegistro : TDate;
+      IdEndereco: Integer;
+      dsCep: string;
+      Integrado: Integer;
+  end;
 
   type
     TMasterClass = Class(TConnect)
@@ -24,7 +35,13 @@ uses
         FNaturePerson: Integer;
         FRegistrationDate: TDate;
         FErro: string;
+        FObjSender: TObject;
+        FProgressBar: TProgressBar;
+        FStatusBar: TStatusBar;
 
+        procedure AddRecords;
+        procedure UpDateRecords;
+        procedure ThreadEnd(Sender: TObject);
       public
         property ObjConnect: TConnect read FObjConnect write FObjConnect;
         property Qry: TFDQuery read FQry write FQry;
@@ -36,6 +53,9 @@ uses
         property NaturePerson: Integer read FNaturePerson write FNaturePerson;
         property RegistrationDate: TDate read FRegistrationDate write FRegistrationDate;
         property Erro: string read FErro write FErro;
+        property ObjSender: TObject read FObjSender write FObjSender;
+        property ProgressBar: TProgressBar read FProgressBar write FProgressBar;
+        property StatusBar: TStatusBar read FStatusBar write FStatusBar;
 
         constructor Create(Connect: TConnect);
         destructor Destroy; Override;
@@ -43,16 +63,21 @@ uses
         procedure InsertIntoTemporaryTable;
         procedure ProcessUpdate;
         procedure DeleteRecord;
-        procedure UpdateData(Operation: Integer);
+        procedure UpdateData;
         procedure ProcessInsertMultipleRecords;
         procedure ProcessDeleteMultipleRecords;
         procedure ProcessDeleteRecord;
-        procedure RecordsSearch;
+        procedure SearchRecords;  // Refatorando
+        procedure ThreadExecute;
     End;
 
 implementation
 
 { TMasterClass }
+
+var
+  FRecords: Array of TRecords;
+  FCEP: TViaCep;
 
 constructor TMasterClass.Create(Connect: TConnect);
 begin
@@ -72,6 +97,8 @@ begin
 
   DTSource := TDataSource.Create(Nil);
   DTSource.DataSet := MemTable;
+
+  FCEP := TViaCep.Create();
 end;
 
 destructor TMasterClass.Destroy;
@@ -81,7 +108,7 @@ end;
 
 procedure TMasterClass.InsertIntoTemporaryTable;
 begin
-  RecordsSearch;
+  // SearchRecords; // Refatorando
 
   MemTable.Close;
   MemTable.Active := True;
@@ -89,14 +116,15 @@ begin
   while NOT Qry.Eof do
   begin
     MemTable.Append;
-    MemTable.FieldByName('IdPessoa').AsInteger    := Qry.FieldByName('IdPessoa').AsInteger;
-    MemTable.FieldByName('FlNatureza').AsString   := Qry.FieldByName('FlNatureza').AsString;
-    MemTable.FieldByName('DsDocumento').AsString  := Qry.FieldByName('DsDocumento').AsString;
-    MemTable.FieldByName('NmPrimeiro').AsString   := Qry.FieldByName('NmPrimeiro').AsString;
-    MemTable.FieldByName('NmSegundo').AsString    := Qry.FieldByName('NmSegundo').AsString;
+    MemTable.FieldByName('IdPessoa').AsInteger := Qry.FieldByName('IdPessoa').AsInteger;
+    MemTable.FieldByName('FlNatureza').AsString := Qry.FieldByName('FlNatureza').AsString;
+    MemTable.FieldByName('DsDocumento').AsString := Qry.FieldByName('DsDocumento').AsString;
+    MemTable.FieldByName('NmPrimeiro').AsString := Qry.FieldByName('NmPrimeiro').AsString;
+    MemTable.FieldByName('NmSegundo').AsString := Qry.FieldByName('NmSegundo').AsString;
     MemTable.FieldByName('DtRegistro').AsDateTime := Qry.FieldByName('DtRegistro').AsDateTime;
-    MemTable.FieldByName('IdEndereco').AsInteger  := Qry.FieldByName('IdEndereco').AsInteger;
-    MemTable.FieldByName('DsCep').AsString        := Qry.FieldByName('DsCep').AsString;
+    MemTable.FieldByName('IdEndereco').AsInteger := Qry.FieldByName('IdEndereco').AsInteger;
+    MemTable.FieldByName('DsCep').AsString := Qry.FieldByName('DsCep').AsString;
+    MemTable.FieldByName('Integrado').AsInteger := Qry.FieldByName('Integrado').AsInteger;
     MemTable.Post;
 
     Qry.Next;
@@ -105,67 +133,105 @@ begin
   Qry.Close;
 end;
 
-procedure TMasterClass.RecordsSearch;
+procedure TMasterClass.SearchRecords;
 begin
-  try
-    Qry.Close;
-    Qry.SQL.Clear;
-    Qry.SQL.Add('SELECT ');
-    Qry.SQL.Add('p.IdPessoa,');
-    Qry.SQL.Add('FlNatureza,');
-    Qry.SQL.Add('DsDocumento,');
-    Qry.SQL.Add('NmPrimeiro,');
-    Qry.SQL.Add('NmSegundo,');
-    Qry.SQL.Add('DtRegistro,');
-    Qry.SQL.Add('e.IdEndereco,');
-    Qry.SQL.Add('DsCEP,');
-    Qry.SQL.Add('ei.idendereco Integrado');
-    Qry.SQL.Add('FROM ' + FObjConnect.Schema + '.pessoa p');
-    Qry.SQL.Add('LEFT JOIN ' + FObjConnect.Schema + '.endereco e ON e.idpessoa = p.idpessoa');
-    Qry.SQL.Add('LEFT JOIN ' + FObjConnect.Schema + '.endereco_integracao ei ON ei.idendereco = e.idendereco');
-    Qry.SQL.Add('where ei.idendereco is null');
-    Qry.SQL.Add('ORDER BY p.idpessoa ASC');
-    SaveLog('MasterClass.RecordsSearch: ' + CR + Qry.SQL.Text);
+end;
 
-    Qry.Open;
-  except
-    on E:Exception do
-      raise Exception.Create('Erro ao pesquisar base de dados' + CR + e.ToString);
+procedure TMasterClass.ThreadEnd(Sender: TObject);
+begin
+  begin
+    if Assigned(TThread(Sender).FatalException) then
+      ShowMessage('Erro de execução... ' +
+        Exception(TThread(Sender).FatalException).Message)
+    else
+    begin
+      StatusBar.Panels[0].Text := '';
+      ProgressBar.Position := 0;
+      ProgressBar.Visible := False;
+    end;
   end;
 end;
 
-procedure TMasterClass.ProcessUpdate;
+procedure TMasterClass.ThreadExecute;
 var
-  Operation: Integer;
-  Erro: string;
+  LThread: TThread;
 
 begin
-  try
-    // Default é Inserção
-    Operation := 1;
+  LThread := TThread.CreateAnonymousThread(procedure
+  var
+    IdEndereco: Integer;
+    Erro: string;
+    x: Integer;
 
+  begin
+    FProgressBar.Max := Length(FRecords);
+    FProgressBar.Visible := True;
+
+    try
+      for x := 0 to Pred(Length(FRecords)) do
+      begin
+        if FRecords[x].Integrado = 0 then
+        begin
+          FCEP.SearchZipCode(FRecords[x].dsCep);
+          Erro := FCEP.ZipCodeError;
+          if Erro = EmptyStr then
+          begin
+            // Validar se Integração Endereço já existe antes de incluir
+            Integration.Search(FRecords[x].IdEndereco);
+            Erro := Integration.Erro;
+
+            if Erro = EmptyStr then
+            begin
+              Integration.IdEndereco := FRecords[x].IdEndereco;
+              Integration.DsUf := FCEP.Uf;
+              Integration.NmCidade := FCEP.Cidade;
+              Integration.NmBairro := FCEP.Bairro;
+              Integration.NmLogradouro := FCEP.Logradouro;
+              Integration.DsComplemento := FCEP.Complemento;
+              Integration.Insert;
+            end;
+          end;
+        end;
+
+        TThread.Synchronize(nil, procedure
+        begin
+          ProgressBar.Position := x;
+          StatusBar.Panels[0].Text := 'Integrando o endereço do CEP ' +
+            FRecords[x].dsCep + '...';
+        end);
+      end;
+    except
+      on E:Exception do
+        raise Exception.Create('Erro de integração das tabelas' + CR +
+          'Erro: ' + e.ToString);
+    end;
+  end);
+
+  LThread.OnTerminate := ThreadEnd;
+  LThread.Start;
+end;
+
+procedure TMasterClass.ProcessUpdate;
+begin
+  try
     if MemTable.State in [dsEdit] then
     begin
       People.IdPessoa := MemTable.FieldByName('IdPessoa').AsInteger;
-      Address.IdPessoa := People.IdPessoa;
+      Address.IdPessoa := MemTable.FieldByName('IdPessoa').AsInteger;
       Address.IdEndereco := MemTable.FieldByName('IdEndereco').AsInteger;
-
-      Operation := 2;
     end;
 
     MemTable.FieldByName('FlNatureza').AsInteger := FNaturePerson;
     MemTable.FieldByName('DtRegistro').AsDateTime := FRegistrationDate;
   finally
-    UpdateData(Operation);
+    UpdateData;
 
-    if MemTable.State in [dsInsert] then
-      MemTable.FieldByName('IdPessoa').AsInteger := People.IdPessoa;
-
-    MemTable.Post;
+    if Erro = EmptyStr then
+      MemTable.Post;
   end;
 end;
 
-procedure TMasterClass.UpdateData(Operation: Integer);
+procedure TMasterClass.UpdateData;
 var
   Erro: string;
 
@@ -176,35 +242,45 @@ begin
   People.NmSegundo := MemTable.FieldByName('NmSegundo').AsString;
   People.DtRegistro := Trunc(MemTable.FieldByName('DtRegistro').AsDateTime);
 
-  case Operation of
-    1: Begin
+  Address.DsCEP := MemTable.FieldByName('DsCEP').AsString;
+
+  case MemTable.State of
+    dsInsert:
+      begin
         People.Insert;
         People.IdPessoa := ReturnID(FObjConnect.Connection, 'db_agenda.pessoa',
           'IdPessoa');
-       End;
-    2: People.UpDate;
+
+        if People.Erro = EmptyStr then
+          begin
+            MemTable.FieldByName('IdPessoa').AsInteger := People.IdPessoa;
+
+            Address.IdPessoa := People.IdPessoa;
+            Address.Insert;
+
+            if Address.Erro = EmptyStr then
+              begin
+                MemTable.FieldByName('IdEndereco').AsInteger := ReturnID(
+                  FObjConnect.Connection, 'db_agenda.endereco', 'IdEndereco');
+
+                AddRecords;
+              end;
+          end;
+      end;
+
+    dsEdit:
+      begin
+        People.UpDate;
+
+        if People.Erro = EmptyStr then
+          begin
+            Address.UpDate;
+
+            UpDateRecords;
+          end;
+      end;
   end;
-
-  Erro := People.Erro;
-
-  if Erro = EmptyStr then
-  begin
-    Address.DsCEP := MemTable.FieldByName('DsCEP').AsString;
-
-    case Operation of
-      1: begin
-          Address.IdPessoa := People.IdPessoa;
-          Address.Insert;
-         end;
-
-      2: Address.UpDate;
-    end;
-
-    Erro := Address.Erro;
-  end;
-
-  if Erro <> EmptyStr then
-    FErro := Erro;
+  FErro := Erro;
 end;
 
 procedure TMasterClass.ProcessInsertMultipleRecords;
@@ -239,7 +315,7 @@ begin
       MemTable.FieldByName('DtRegistro').AsDateTime := Trunc(Now);
       MemTable.FieldByName('DsCEP').AsString := Ceps[x].ToString;
 
-      UpdateData(1);
+      UpdateData;
 
       MemTable.FieldByName('IdPessoa').AsInteger := People.IdPessoa;
       MemTable.Post;
@@ -281,12 +357,55 @@ begin
 
     Erro := People.Erro;
   Finally
-    // Delete Record da tabela temporária
     if Erro = '' then
       MemTable.Delete
     else
       Application.MessageBox(PChar(Erro), 'Base de Pessoas', MB_ICONWARNING + MB_OK + MB_SYSTEMMODAL);
   End;
+end;
+
+procedure TMasterClass.AddRecords;
+var
+  LRecords: TRecords;
+  LText: string;
+  x: Integer;
+
+begin
+  if Erro = EmptyStr then
+    begin
+      LRecords.IdPessoa := MemTable.FieldByName('IdPessoa').AsInteger;
+      LRecords.flNatureza := MemTable.FieldByName('flNatureza').AsInteger;
+      LRecords.dsDocuemtno := MemTable.FieldByName('dsDocumento').AsString;
+      LRecords.nmPrimeiro := MemTable.FieldByName('nmPrimeiro').AsString;
+      LRecords.nmSegundo := MemTable.FieldByName('nmSegundo').AsString;
+      LRecords.dtRegistro := Trunc(MemTable.FieldByName('DtRegistro').AsDateTime);
+      LRecords.IdEndereco := MemTable.FieldByName('IdEndereco').AsInteger;
+      LRecords.dsCep := MemTable.FieldByName('dscep').AsString;
+      LRecords.Integrado := MemTable.FieldByName('Integrado').AsInteger;
+
+      x := Length(FRecords) + 1;
+
+      SetLength(FRecords, x);
+      FRecords[Pred(x)] := LRecords;
+
+      LText := LText +
+        'IdPessoa: ' + LRecords.IdPessoa.ToString + CR +
+        'Natureza: ' + LRecords.flNatureza.ToString + CR +
+        'DsDocumento: ' + LRecords.dsDocuemtno + CR +
+        'NmPrimeiro: ' + LRecords.nmPrimeiro + CR +
+        'NmSegundo: ' + LRecords.nmSegundo + CR +
+        'DtRegistro: ' + DateToStr(LRecords.dtRegistro) + CR +
+        'IdEndereco: ' + LRecords.IdEndereco.ToString + CR +
+        'DsCep: ' +LRecords.dsCep + CR +
+        'Integrado: ' + LRecords.Integrado.ToString + CR;
+
+      SaveLog('MasterClass.AddRecords: ' + CR + LText);
+    end;
+end;
+
+procedure TMasterClass.UpDateRecords;
+begin
+
 end;
 
 end.

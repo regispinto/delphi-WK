@@ -246,7 +246,7 @@ begin
 
       FErro := '';
 
-      SaveLog('ClassConnection.CreateDB: ' + CR + 'Banco de dados ' + FDatabase +
+      SaveLog('ClassConnection.CreateDB: Banco de dados ' + FDatabase +
         ' criado com sucesso');
     except
       on e:Exception do
@@ -261,7 +261,7 @@ end;
 
 procedure TConnect.CreateSchema;
 begin
-  SaveLog('ClassConnection.CreateDB - Criando Banco de Dados ' + FDatabase + '...');
+  SaveLog('ClassConnection.CreateSchema - Verificando se Schema ' + SCHEMA + ' existe...');
 
   ActivateConnection(FConnect.Database);
 
@@ -269,23 +269,17 @@ begin
   begin
     try
       Qry.SQL.Clear;
-      Qry.SQL.Add('create schema if not exists ' + SCHEMA);
+      Qry.SQL.Add('CREATE SCHEMA IF NOT EXISTS ' + SCHEMA);
 
-      SaveLog('ClassConnection.CreateSchema: ' + CR + Qry.SQL.Text);
+      SaveLog('ClassConnection.CreateSchema: ' + Qry.SQL.Text);
 
       Qry.Prepare;
       Qry.ExecSQL;
 
       FErro := '';
-
-      SaveLog('ClassConnection.CreateSchema: ' + CR + 'Schema ' + SCHEMA + ' criado com sucesso');
     except
       on e:Exception do
-        begin
-          FErro := 'Erro ao criar o schema ' + FDatabase + CR +
-            'Erro: ' + CR + e.ToString;
-          SaveLog('ClassConnection.CreateSchema: ' + CR + FErro);
-        end;
+        FErro := 'Erro ao criar o schema ' + FDatabase + CR + 'Erro: ' + e.ToString;
     end;
   end;
 end;

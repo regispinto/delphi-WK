@@ -112,12 +112,9 @@
         <DCCReference Include="Tables\ClassCreateTables.pas"/>
         <DCCReference Include="People\ClassPeople.pas"/>
         <DCCReference Include="Connection\ClassConnection.pas"/>
-        <DCCReference Include="ZipCode\uViaCEP.pas">
-            <Form>fViaCep</Form>
-            <FormType>dfm</FormType>
-        </DCCReference>
         <DCCReference Include="Functions\uFunctions.pas"/>
         <DCCReference Include="uMasterFunctions.pas"/>
+        <DCCReference Include="ZipCode\ClasseViaCep.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

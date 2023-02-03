@@ -121,7 +121,7 @@ begin
     FConnect.Commit;
   except
     on e:Exception do begin
-      Erro := 'Erro ao criar a tabela endereco' + CR + 'Erro: ' + e.ToString;
+      Erro := 'Erro ao criar a tabela endereco';
       SaveLog('ClassAddress.CreateTableAddress: ' + CR + Erro);
 
       FConnect.Rollback;

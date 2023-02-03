@@ -5,7 +5,7 @@ object frmMaster: TfrmMaster
   BorderStyle = bsSingle
   Caption = 'Base de Pessoas'
   ClientHeight = 513
-  ClientWidth = 709
+  ClientWidth = 979
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -25,7 +25,7 @@ object frmMaster: TfrmMaster
   object pnlDados: TPanel
     Left = 0
     Top = 0
-    Width = 709
+    Width = 979
     Height = 231
     Align = alTop
     Color = clSilver
@@ -157,7 +157,7 @@ object frmMaster: TfrmMaster
   object stbFooter: TStatusBar
     Left = 0
     Top = 493
-    Width = 709
+    Width = 979
     Height = 20
     Panels = <
       item
@@ -170,7 +170,7 @@ object frmMaster: TfrmMaster
   object dbgDados: TDBGrid
     Left = 0
     Top = 272
-    Width = 709
+    Width = 979
     Height = 200
     TabStop = False
     Align = alClient
@@ -194,7 +194,7 @@ object frmMaster: TfrmMaster
         Expanded = False
         FieldName = 'idpessoa'
         Title.Caption = 'IdPessoa'
-        Visible = False
+        Visible = True
       end
       item
         Expanded = False
@@ -244,13 +244,18 @@ object frmMaster: TfrmMaster
       item
         Expanded = False
         FieldName = 'IdEndereco'
-        Visible = False
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'Integrado'
+        Visible = True
       end>
   end
   object pnlOpcoes: TPanel
     Left = 0
     Top = 231
-    Width = 709
+    Width = 979
     Height = 41
     Align = alTop
     TabOrder = 3
@@ -288,7 +293,7 @@ object frmMaster: TfrmMaster
   object pgbProcess: TProgressBar
     Left = 0
     Top = 472
-    Width = 709
+    Width = 979
     Height = 21
     Align = alBottom
     TabOrder = 4
@@ -340,6 +345,9 @@ object frmMaster: TfrmMaster
     object FDMemTablePeopledscep: TWideStringField
       FieldName = 'dscep'
       Size = 15
+    end
+    object FDMemTablePeopleIntegrado: TIntegerField
+      FieldName = 'Integrado'
     end
   end
   object DsMemPeople: TDataSource

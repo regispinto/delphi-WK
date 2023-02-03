@@ -9,9 +9,9 @@ uses
   ClassCreateTables in 'Tables\ClassCreateTables.pas',
   ClassPeople in 'People\ClassPeople.pas',
   ClassConnection in 'Connection\ClassConnection.pas',
-  uViaCEP in 'ZipCode\uViaCEP.pas' {fViaCep},
   uFunctions in 'Functions\uFunctions.pas',
-  uMasterFunctions in 'uMasterFunctions.pas';
+  uMasterFunctions in 'uMasterFunctions.pas',
+  ClasseViaCep in 'ZipCode\ClasseViaCep.pas';
 
 {$R *.res}
 
@@ -36,7 +36,6 @@ begin
   Application.Title := 'Base de Pessoas';
   Application.CreateForm(TDM, DM);
   Application.CreateForm(TfrmMaster, frmMaster);
-  Application.CreateForm(TfViaCep, fViaCep);
   Application.MainFormOnTaskbar := True;
   Application.Run;
 end.
