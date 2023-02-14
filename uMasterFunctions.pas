@@ -38,6 +38,7 @@ uses
         FObjSender: TObject;
         FProgressBar: TProgressBar;
         FStatusBar: TStatusBar;
+        FCEP: TViaCep;
 
         procedure AddRecords;
         procedure UpDateRecords;
@@ -56,6 +57,7 @@ uses
         property ObjSender: TObject read FObjSender write FObjSender;
         property ProgressBar: TProgressBar read FProgressBar write FProgressBar;
         property StatusBar: TStatusBar read FStatusBar write FStatusBar;
+        property CEP: TViaCep read FCEP write FCEP;
 
         constructor Create(Connect: TConnect);
         destructor Destroy; Override;
@@ -67,7 +69,6 @@ uses
         procedure ProcessInsertMultipleRecords;
         procedure ProcessDeleteMultipleRecords;
         procedure ProcessDeleteRecord;
-        procedure SearchRecords;  // Refatorando
         procedure ThreadExecute;
     End;
 
@@ -77,7 +78,6 @@ implementation
 
 var
   FRecords: Array of TRecords;
-  FCEP: TViaCep;
 
 constructor TMasterClass.Create(Connect: TConnect);
 begin
@@ -108,8 +108,6 @@ end;
 
 procedure TMasterClass.InsertIntoTemporaryTable;
 begin
-  // SearchRecords; // Refatorando
-
   MemTable.Close;
   MemTable.Active := True;
 
@@ -131,10 +129,6 @@ begin
   end;
   MemTable.First;
   Qry.Close;
-end;
-
-procedure TMasterClass.SearchRecords;
-begin
 end;
 
 procedure TMasterClass.ThreadEnd(Sender: TObject);

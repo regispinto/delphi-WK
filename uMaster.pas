@@ -85,10 +85,9 @@ type
   end;
 
 var
-  frmMaster: TfrmMaster;
-
-  FConnect: TConnect;
   FMasterClass: TMasterClass;
+  frmMaster: TfrmMaster;
+  FConnect: TConnect;
 
 implementation
 
@@ -250,11 +249,11 @@ begin
   end
   else
   begin
-    FMasterClass.FCEP.SearchZipCode(dbeCEP.Field.AsString);
+    FMasterClass.CEP.SearchZipCode(dbeCEP.Field.AsString);
 
-    if FCEP.ZipCodeError = EmptyStr then
+    if FMasterClass.CEP.ZipCodeError <> EmptyStr then
     begin
-      FMasterClass.Erro := FCEP.ZipCodeError;
+      FMasterClass.Erro := FMasterClass.CEP.ZipCodeError;
       dbeCEP.SetFocus;
       Exit;
     end;

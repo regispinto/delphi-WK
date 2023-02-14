@@ -194,7 +194,7 @@ object frmMaster: TfrmMaster
         Expanded = False
         FieldName = 'idpessoa'
         Title.Caption = 'IdPessoa'
-        Visible = True
+        Visible = False
       end
       item
         Expanded = False
@@ -244,12 +244,12 @@ object frmMaster: TfrmMaster
       item
         Expanded = False
         FieldName = 'IdEndereco'
-        Visible = True
+        Visible = False
       end
       item
         Expanded = False
         FieldName = 'Integrado'
-        Visible = True
+        Visible = False
       end>
   end
   object pnlOpcoes: TPanel

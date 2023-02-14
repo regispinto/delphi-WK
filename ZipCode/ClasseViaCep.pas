@@ -67,7 +67,6 @@ begin
 
   LRESTRequest := TRESTRequest.Create(nil);
   LRESTRequest.Client := LRESTClient;
-  //LRESTRequest.Resource := FTestCEP + '/json';
   LRESTRequest.Response := LRESTResponse;
 
   LMemTableCEP := TFDMemTable.Create(nil);

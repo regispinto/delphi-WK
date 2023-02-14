@@ -13,7 +13,6 @@ uses
   function IniParamsNOTExists(FileName: string='Config.ini'): Boolean;
   function GetFileFromUrl(Url: String): String;
   function LoadIni(Key1, Key2, DefaultValue: string; FileName: string='config.ini'): String;
-  function StatusService(Service: PWideChar): Boolean;
 
   procedure SaveIni(Key1, Key2, aTexto: string; FileName: string='config.ini');
 
@@ -220,28 +219,6 @@ begin
   pos := LastDelimiter('/', Url);
 
   Result := Copy(url, pos + 1, MaxInt);
-end;
-
-function StatusService(Service: PWideChar): Boolean;
-var
-  HSC,
-  HS:THandle;
-  SS:SERVICE_STATUS;
-
-begin
- HSC := OpenSCManager(nil, nil, SC_Manager_Connect);
- HS  := OpenService(HSC, Service, SC_Manager_All_Access);
-
- if QueryServiceStatus(HS, SS) then
- begin
-   Case SS.dwCurrentState of
-     Service_Stopped : ; // parado
-     Service_Paused  : ; // pausado
-     Service_Running : ; // rodando
-   end;
- end;
- CloseServiceHandle(HS);
- CloseServiceHandle(HSC);
 end;
 
 end.
