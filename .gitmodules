@@ -1,0 +1,3 @@
+[submodule "delphi-generic-classes"]
+	path = delphi-generic-classes
+	url = https://github.com/regispinto/delphi-generic-classes.git
