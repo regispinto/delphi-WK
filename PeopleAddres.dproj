@@ -112,9 +112,9 @@
         <DCCReference Include="Tables\ClassCreateTables.pas"/>
         <DCCReference Include="People\ClassPeople.pas"/>
         <DCCReference Include="Connection\ClassConnection.pas"/>
-        <DCCReference Include="Functions\uFunctions.pas"/>
         <DCCReference Include="uMasterFunctions.pas"/>
-        <DCCReference Include="ZipCode\ClasseViaCep.pas"/>
+        <DCCReference Include="..\delphi-generics-class\ZipCode\ClasseViaCep.pas"/>
+        <DCCReference Include="..\delphi-generics-class\Functions\uFunctions.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

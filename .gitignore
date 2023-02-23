@@ -28,12 +28,12 @@
 
 # Delphi compiler-generated binaries (safe to delete)
 *.exe
-#*.dll
 *.log
 *.bpl
 *.bpi
 *.dcp
 *.so
+*.bak
 *.apk
 *.drc
 *.map

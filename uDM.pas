@@ -32,7 +32,6 @@ type
   public
     { Public declarations }
     FConnect: TConnect;
-
   end;
 
 var

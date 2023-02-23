@@ -9,9 +9,9 @@ uses
   ClassCreateTables in 'Tables\ClassCreateTables.pas',
   ClassPeople in 'People\ClassPeople.pas',
   ClassConnection in 'Connection\ClassConnection.pas',
-  uFunctions in 'Functions\uFunctions.pas',
   uMasterFunctions in 'uMasterFunctions.pas',
-  ClasseViaCep in 'ZipCode\ClasseViaCep.pas';
+  ClasseViaCep in '..\delphi-generics-class\ZipCode\ClasseViaCep.pas',
+  uFunctions in '..\delphi-generics-class\Functions\uFunctions.pas';
 
 {$R *.res}
 

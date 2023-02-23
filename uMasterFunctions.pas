@@ -153,7 +153,6 @@ var
 begin
   LThread := TThread.CreateAnonymousThread(procedure
   var
-    IdEndereco: Integer;
     Erro: string;
     x: Integer;
 
