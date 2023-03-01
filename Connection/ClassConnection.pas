@@ -25,6 +25,8 @@ type
    TConnect = class
    private
       FConnection: TFDConnection;
+      FObjConnect: TConnect;
+      FQry: TFDQuery;
       FPath: string;
       FFileName: string;
       FServer: string;
@@ -42,6 +44,8 @@ type
 
    public
       property Connection: TFDConnection read FConnection write FConnection;
+      property ObjConnect: TConnect read FObjConnect write FObjConnect;
+      property Qry: TFDQuery read FQry write FQry;
       property Path: string read FPath write FPath;
       property FileName: string read FFileName write FFileName;
       property Server: string read FServer write FServer;
@@ -57,49 +61,45 @@ type
       property Erro: string read FErro write FErro;
       property Lib: string read Flib write Flib;
 
-      constructor Create (Connection: TFDConnection);
+      constructor Create();
       destructor Destroy; Override;
 
-      function getLibFolder(Folder: string): Boolean;
-      function getVendorLib(Dll: string): Boolean;
+      function GetLibFolder(Folder: string): Boolean;
+      function GetVendorLib(Dll: string): Boolean;
       function CreateFolderBD: string;
 
-      procedure SetConnectDB(Connect: TConnect);
+      procedure SetConnectDB;
       procedure ExistDB;
       procedure CreateDB(Database: string='');
       procedure CreateSchema;
       procedure ActivateConnection(Database: string='');
+      procedure CreateQry;
    end;
 
 implementation
 
-var
-  FConnect: TConnect;
-  Qry: TFDQuery;
-
 { TConnect }
 
-constructor TConnect.Create(Connection: TFDConnection);
+constructor TConnect.Create();
 begin
-  FConnection := Connection;
-
-  Qry := TFDQuery.Create(nil);
-  Qry.Connection := FConnection;
 end;
 
 destructor TConnect.Destroy;
 begin
-  FreeAndNil(Qry);
   inherited;
 end;
 
-procedure TConnect.SetConnectDB(Connect: TConnect);
+procedure TConnect.CreateQry;
 begin
-  FConnect := Connect;
+  Qry := TFDQuery.Create(nil);
+  Qry.Connection := FConnection;
+end;
 
+procedure TConnect.SetConnectDB;
+begin
   FConnection.Connected := False;
   FConnection.Params.Clear;
-  FConnection.Params.Add('DriverID=' + Connect.DriverID);
+  FConnection.Params.Add('DriverID=' + FObjConnect.DriverID);
 
   case AnsiIndexStr(UpperCase(FConnection.DriverName), ['SQLITE', 'MYSQL', 'FB', 'PG']) of
     0: begin
@@ -174,20 +174,20 @@ begin
       begin
         if AnsiContainsStr(e.Message, 'database "db_pessoas" does not exist') then
         begin
-          FConnect.Erro := EmptyStr;
+          FObjConnect.Erro := EmptyStr;
           SaveLog('ClassConnection.ValidateDB - ' + e.Message);
         end;
 
         if AnsiContainsStr(e.Message, 'password authentication failed for user') then
         begin
-          FConnect.Erro := e.Message + ' ' + e.ClassName;
-          SaveLog('ClassConnection.ValidateDB - ' + FConnect.Erro);
+          FObjConnect.Erro := e.Message + ' ' + e.ClassName;
+          SaveLog('ClassConnection.ValidateDB - ' + FObjConnect.Erro);
         end;
       end;
     on E : Exception do
       begin
-        FConnect.Erro := 'Erro: ' + e.Message + ' Classe: ' + e.ClassName;
-        SaveLog('ClassConnection.ValidateDB - ' + FConnect.Erro);
+        FObjConnect.Erro := 'Erro: ' + e.Message + ' Classe: ' + e.ClassName;
+        SaveLog('ClassConnection.ValidateDB - ' + FObjConnect.Erro);
       end;
   end;
 end;
@@ -206,17 +206,17 @@ begin
 
     if Qry.RowsAffected = 0 then
     begin
-      FConnect.Erro := 'Banco de dados ' + Database + ' não existe, deve ser criado...';
-      SaveLog('ClassConnection.ExistDB - ' + FConnect.Erro);
+      FObjConnect.Erro := 'Banco de dados ' + Database + ' não existe, deve ser criado...';
+      SaveLog('ClassConnection.ExistDB - ' + FObjConnect.Erro);
     end
     else
     begin
-      FConnect.Erro := '';
+      FObjConnect.Erro := '';
       SaveLog('ClassConnection.ExistDB - Banco de dados ' + Database + ' já existe');
     end;
   except
     on e:Exception do
-      FConnect.Erro := e.ToString;
+      FObjConnect.Erro := e.ToString;
   end;
 end;
 
@@ -226,7 +226,7 @@ begin
 
   ActivateConnection;
 
-  if FConnect.Erro <> EmptyStr then
+  if FObjConnect.Erro <> EmptyStr then
   begin
     try
       Qry.SQL.Clear;
@@ -263,9 +263,9 @@ procedure TConnect.CreateSchema;
 begin
   SaveLog('ClassConnection.CreateSchema - Verificando se Schema ' + SCHEMA + ' existe...');
 
-  ActivateConnection(FConnect.Database);
+  ActivateConnection(FObjConnect.Database);
 
-  if FConnect.Erro = EmptyStr then
+  if FObjConnect.Erro = EmptyStr then
   begin
     try
       Qry.SQL.Clear;
@@ -284,7 +284,7 @@ begin
   end;
 end;
 
-function TConnect.getLibFolder(Folder: string): Boolean;
+function TConnect.GetLibFolder(Folder: string): Boolean;
 begin
   Result := DirectoryExists(Folder);
 end;
@@ -303,7 +303,7 @@ begin
   Result := LPath;
 end;
 
-function TConnect.getVendorLib(Dll: String): Boolean;
+function TConnect.GetVendorLib(Dll: String): Boolean;
 begin
   Result := FileExists(Dll);
 end;

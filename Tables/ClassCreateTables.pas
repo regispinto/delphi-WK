@@ -8,136 +8,115 @@ uses
   Data.DB, Vcl.Grids, FireDAC.Comp.Client, IniFiles,
   FireDAC.Phys.MySQL,
 
-  uFunctions, ClassConnection, ClassPeople, ClassIntegrationAddress;
+  uFunctions, ClassPeople, ClassIntegrationAddress, uMasterFunctions;
 
   type
-    TTables = Class(TConnect)
+    //TTables = Class(TMasterClass)
+    TTables = Class
       private
-        FQry: TFDQuery;
-
-        procedure setConnection;
       public
-        property Qry: TFDQuery read FQry write FQry;
-
-        constructor Create(Connection: TConnect);
+        constructor Create(MasterClass: TMasterClass);
         destructor Destroy; Override;
 
         procedure CreateDBTables;
-        procedure getTables;
+        procedure GetTables;
+        procedure SetConnection;
     End;
 
 implementation
 
 { TTables }
+Var
+  FMasterClass: TMasterClass;
 
-var
-  FConnect: TConnect;
-  QryTable: TFDQuery;
-  People: TPeople;
-  Address: TAddress;
-  Integration: TIntegrationAddress;
-
-constructor TTables.Create(Connection: TConnect);
+constructor TTables.Create(MasterClass: TMasterClass);
 begin
-  FConnect := Connection;
-
-  setConnection;
-
-  QryTable := TFDQuery.Create(Nil);
-  QryTable.Connection := FConnect.Connection;
-
-  People := TPeople.Create(FConnect);
-  Address := TAddress.Create(Connection);
-  Integration := TIntegrationAddress.Create(Connection);
+  FMasterClass := MasterClass;
 end;
 
 destructor TTables.Destroy;
 begin
-  QryTable.Destroy;
   inherited;
 end;
 
 procedure TTables.CreateDBTables;
 begin
-  getTables;
+  GetTables;
 
-  if QryTable.Locate('table_name', 'pessoa', []) then
-  begin
-    SaveLog('Tables.CreateDBTables: ' + 'QryTable.Locate(table_name, pessoa, [])');
-    SaveLog('Tables.CreateDBTables: ' + 'Tabela pessoa já existe');
-  end
+  if FMasterClass.ObjConnect.Qry.Locate('table_name', 'pessoa', []) then
+    SaveLog('Tables.CreateDBTables: ' + 'Qry.Locate(table_name, pessoa, []) - ' +
+      'Tables.CreateDBTables: ' + 'Tabela pessoa já existe')
   else
   begin
-    People.CreateTablePeople;
+    FMasterClass.People.CreateTablePeople;
 
-    if People.Erro  <> EmptyStr then
+    if FMasterClass.People.Erro <> EmptyStr then
     begin
-      Application.MessageBox(PChar(People.Erro + '. Favor verificar'),
+      Application.MessageBox(PChar(FMasterClass.People.Erro + '. Favor verificar'),
         'Base de Pessoas', MB_ICONERROR + MB_SYSTEMMODAL);
       Application.Terminate;
     end;
   end;
-  //
-  if QryTable.Locate('table_name', 'endereco', []) then
-  begin
-    SaveLog('Tables.CreateDBTables: ' + 'QryTable.Locate(table_name, endereco, [])');
-    SaveLog('Tables.CreateDBTables: ' + 'Tabela endereco já existe');
-  end
+
+  if FMasterClass.ObjConnect.Qry.Locate('table_name', 'endereco', []) then
+    SaveLog('Tables.CreateDBTables: ' + 'Qry.Locate(table_name, endereco, []) - ' +
+      'Tables.CreateDBTables: ' + 'Tabela endereco já existe')
   else
   begin
-    Address.CreateTableAddress;
+    FMasterClass.Address.CreateTableAddress;
 
-    if Address.Erro <> EmptyStr then
+    if FMasterClass.Address.Erro <> EmptyStr then
     begin
-      Application.MessageBox(PChar(Address.Erro + '. Favor verificar'),
+      Application.MessageBox(PChar(FMasterClass.Address.Erro + '. Favor verificar'),
         'Base de Pessoas', MB_ICONERROR + MB_SYSTEMMODAL);
       Application.Terminate;
     end;
   end;
-  //
-  if QryTable.Locate('table_name', 'endereco_integracao', []) then
-  begin
-    SaveLog('Tables.CreateDBTables: ' + 'QryTable.Locate(table_name, endereco_integracao, [])');
-    SaveLog('Tables.CreateDBTables: ' + 'Tabela endereco_integracao já existe');
-  end
+
+  if FMasterClass.ObjConnect.Qry.Locate('table_name', 'endereco_integracao', []) then
+    SaveLog('Tables.CreateDBTables: ' + 'Qry.Locate(table_name, endereco_integracao, []) - ' +
+      'Tables.CreateDBTables: ' + 'Tabela endereco_integracao já existe')
   else
   begin
-    Integration.CreateTableIntegrationAddress;
+    FMasterClass.Integration.CreateTableIntegrationAddress;
 
-    if Integration.Erro <> EmptyStr then
+    if FMasterClass.Integration.Erro <> EmptyStr then
     begin
-      Application.MessageBox(PChar(Integration.Erro + '. Favor verificar'),
+      Application.MessageBox(PChar(FMasterClass.Integration.Erro + '. Favor verificar'),
         'Base de Pessoas', MB_ICONERROR + MB_SYSTEMMODAL);
       Application.Terminate;
     end;
   end;
 end;
 
-procedure TTables.getTables;
+procedure TTables.GetTables;
 begin
   try
-    setConnection;
+    SetConnection;
 
-    QryTable.Close;
-    QryTable.SQL.Clear;
-    QryTable.SQL.Add('SELECT table_name FROM information_schema.tables');
-    QryTable.SQL.Add('where table_schema = ' + QuotedStr(FConnect.Schema) + ' and ');
-    QryTable.SQL.Add('table_type = ' + QuotedStr('BASE TABLE'));
+    with FMasterClass.ObjConnect.Qry do
+    begin
+      Close;
+      SQL.Clear;
+      SQL.Add('SELECT table_name FROM information_schema.tables');
+      SQL.Add('where table_schema = ' + QuotedStr(FMasterClass.ObjConnect.Schema) + ' and ');
+      SQL.Add('table_type = ' + QuotedStr('BASE TABLE'));
 
-    SaveLog('ClassCreateTables.getTables: ' + CR + QryTable.SQL.Text);
+      SaveLog('ClassCreateTables.getTables: ' + CR + SQL.Text);
 
-    QryTable.Open;
+      Open;
+    end;
   except
     on E:Exception do
       raise Exception.Create('Ocorreu um erro ' + CR + e.ToString);
   end;
 end;
 
-procedure TTables.setConnection;
+procedure TTables.SetConnection;
 begin
-  FConnect.Connection.Connected := False;
-  FConnect.Database := FConnect.Database;
-  FConnect.Connection.Connected := True;
+  FMasterClass.ObjConnect.Connection.Connected := False;
+  //ObjConnect.Database             := ObjConnect.Database;
+  FMasterClass.ObjConnect.Connection.Connected := True;
 end;
 
 end.

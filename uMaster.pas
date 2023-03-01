@@ -85,9 +85,7 @@ type
   end;
 
 var
-  FMasterClass: TMasterClass;
   frmMaster: TfrmMaster;
-  FConnect: TConnect;
 
 implementation
 
@@ -105,14 +103,8 @@ end;
 
 procedure TfrmMaster.FormCreate(Sender: TObject);
 begin
-  FConnect := DM.FConnect;
-
-  if FConnect.Connection.Connected then
-    begin
-      FMasterClass := TMasterClass.Create(FConnect);
-      FMasterClass.MemTable := FDMemTablePeople;
-      FDMemTablePeople.Active := True;
-    end;
+  FMasterClass.MemTable := FDMemTablePeople;
+  FDMemTablePeople.Active := True;
 end;
 
 procedure TfrmMaster.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);

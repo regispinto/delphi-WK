@@ -14,7 +14,7 @@ uses
 
   FireDAC.Phys.PGDef, FireDAC.Phys.PG, FireDAC.Phys.PGWrapper,
 
-  uFunctions, ClassConnection, ClassCreateTables, ClassPeople;
+  uFunctions, uMasterFunctions, ClassConnection, ClassCreateTables, ClassPeople;
 
 type
   TDM = class(TDataModule)
@@ -29,6 +29,7 @@ type
     function ValidatePostgreSQL: Boolean;
 
     procedure StartCreateTabels;
+    procedure InitializeApplication;
   public
     { Public declarations }
     FConnect: TConnect;
@@ -36,6 +37,7 @@ type
 
 var
   DM: TDM;
+  FMasterClass: TMasterClass;
 
 implementation
 
@@ -45,31 +47,16 @@ implementation
 
 procedure TDM.DataModuleCreate(Sender: TObject);
 begin
-  FConnect := TConnect.Create( FDConnection );
+  FConnect := TConnect.Create();
+  FConnect.Connection := FDConnection;
+  FConnect.ObjConnect := FConnect;
   FConnect.DriverID := 'PG';
+
+  FConnect.CreateQry;
+
   FDPhysPgDriverLink.VendorHome := '.\';
 
-  if ValidatePostgreSQL then
-  begin
-    if IniParamsNOTExists then
-    begin
-      CreateFile('Config.ini');
-      CreateIniParams(FConnect.DriverID);
-    end;
-
-    FConnect.SetConnectDB(FConnect);
-    FConnect.ActivateConnection();
-    if FConnect.Erro = EmptyStr then
-    begin
-      FConnect.ExistDB;
-
-      if FConnect.Erro <> EmptyStr then
-        FConnect.CreateDB;
-
-      FConnect.CreateSchema;
-      StartCreateTabels;
-    end;
-  end;
+  InitializeApplication;
 
   if FConnect.Erro <> EmptyStr then
   begin
@@ -83,13 +70,48 @@ begin
   end;
 end;
 
+procedure TDM.InitializeApplication;
+begin
+  if ValidatePostgreSQL then
+  begin
+    if IniParamsNOTExists then
+    begin
+      CreateFile('Config.ini');
+      CreateIniParams(FConnect.DriverID);
+    end;
+
+    FConnect.SetConnectDB;
+    FConnect.ActivateConnection;
+
+    if FConnect.Erro = EmptyStr then
+    begin
+      FConnect.ExistDB;
+
+      if FConnect.Erro <> EmptyStr then
+        FConnect.CreateDB;
+
+      FConnect.CreateSchema;
+
+      if FConnect.Connection.Connected then
+      begin
+        FMasterClass := TMasterClass.Create(FConnect);
+        //FMasterClass.ObjConnect := FConnect;
+      end;
+
+      StartCreateTabels;
+    end;
+  end;
+end;
+
 procedure TDM.StartCreateTabels;
 var
   Table: TTables;
 begin
   try
     try
-      Table := TTables.Create( FConnect );
+      Table := TTables.Create(FMasterClass);
+      //Table.ObjConnect := FMasterClass.ObjConnect;
+      Table.SetConnection;
       Table.CreateDBTables;
     Except
       on E:Exception do

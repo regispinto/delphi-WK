@@ -10,8 +10,8 @@ uses
   ClassPeople in 'People\ClassPeople.pas',
   ClassConnection in 'Connection\ClassConnection.pas',
   uMasterFunctions in 'uMasterFunctions.pas',
-  ClasseViaCep in '..\delphi-generics-class\ZipCode\ClasseViaCep.pas',
-  uFunctions in '..\delphi-generics-class\Functions\uFunctions.pas';
+  uFunctions in '..\delphi-generic-classes\Functions\uFunctions.pas',
+  ClasseViaCep in 'delphi-generic-classes\ZipCode\ClasseViaCep.pas';
 
 {$R *.res}
 

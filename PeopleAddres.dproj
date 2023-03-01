@@ -113,8 +113,8 @@
         <DCCReference Include="People\ClassPeople.pas"/>
         <DCCReference Include="Connection\ClassConnection.pas"/>
         <DCCReference Include="uMasterFunctions.pas"/>
-        <DCCReference Include="..\delphi-generics-class\ZipCode\ClasseViaCep.pas"/>
-        <DCCReference Include="..\delphi-generics-class\Functions\uFunctions.pas"/>
+        <DCCReference Include="..\delphi-generic-classes\Functions\uFunctions.pas"/>
+        <DCCReference Include="delphi-generic-classes\ZipCode\ClasseViaCep.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

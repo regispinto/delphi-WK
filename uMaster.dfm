@@ -5,7 +5,7 @@ object frmMaster: TfrmMaster
   BorderStyle = bsSingle
   Caption = 'Base de Pessoas'
   ClientHeight = 513
-  ClientWidth = 979
+  ClientWidth = 674
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -25,12 +25,13 @@ object frmMaster: TfrmMaster
   object pnlDados: TPanel
     Left = 0
     Top = 0
-    Width = 979
+    Width = 674
     Height = 231
     Align = alTop
     Color = clSilver
     ParentBackground = False
     TabOrder = 0
+    ExplicitWidth = 979
     object lblNatureza: TLabel
       Left = 24
       Top = 14
@@ -157,7 +158,7 @@ object frmMaster: TfrmMaster
   object stbFooter: TStatusBar
     Left = 0
     Top = 493
-    Width = 979
+    Width = 674
     Height = 20
     Panels = <
       item
@@ -166,11 +167,12 @@ object frmMaster: TfrmMaster
       item
         Width = 50
       end>
+    ExplicitWidth = 979
   end
   object dbgDados: TDBGrid
     Left = 0
     Top = 272
-    Width = 979
+    Width = 674
     Height = 200
     TabStop = False
     Align = alClient
@@ -255,10 +257,11 @@ object frmMaster: TfrmMaster
   object pnlOpcoes: TPanel
     Left = 0
     Top = 231
-    Width = 979
+    Width = 674
     Height = 41
     Align = alTop
     TabOrder = 3
+    ExplicitWidth = 979
     object btnNovo: TBitBtn
       Left = 24
       Top = 7
@@ -293,10 +296,11 @@ object frmMaster: TfrmMaster
   object pgbProcess: TProgressBar
     Left = 0
     Top = 472
-    Width = 979
+    Width = 674
     Height = 21
     Align = alBottom
     TabOrder = 4
+    ExplicitWidth = 979
   end
   object FDMemTablePeople: TFDMemTable
     AfterScroll = FDMemTablePeopleAfterScroll
@@ -372,6 +376,7 @@ object frmMaster: TfrmMaster
     end
   end
   object tmeThread: TTimer
+    Enabled = False
     Interval = 10000
     OnTimer = tmeThreadTimer
     Left = 648

@@ -7,7 +7,7 @@ uses
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.StrUtils,
   Data.DB, Vcl.Grids, FireDAC.Comp.Client, IniFiles, Vcl.Samples.Gauges, Vcl.ComCtrls,
 
-  uFunctions, ClasseViaCep, ClassConnection, ClassPeople, ClassIntegrationAddress;
+  uFunctions, ClassConnection, ClasseViaCep, ClassPeople, ClassIntegrationAddress;
 
   type
     TRecords = record
@@ -27,7 +27,7 @@ uses
       private
         FObjConnect: TConnect;
         FIntegration: TIntegrationAddress;
-        FQry: TFDQuery;
+        //FQry: TFDQuery;
         FDataSource: TDataSource;
         FPeople: TPeople;
         FAddress: TAddress;
@@ -43,9 +43,10 @@ uses
         procedure AddRecords;
         procedure UpDateRecords;
         procedure ThreadEnd(Sender: TObject);
+
       public
         property ObjConnect: TConnect read FObjConnect write FObjConnect;
-        property Qry: TFDQuery read FQry write FQry;
+        //property Qry: TFDQuery read FQry write FQry;
         property DTSource: TDataSource read FDataSource write FDataSource;
         property People: TPeople read FPeople write FPeople;
         property Address: TAddress read FAddress write FAddress;
@@ -83,22 +84,58 @@ constructor TMasterClass.Create(Connect: TConnect);
 begin
   FObjConnect := Connect;
 
-  People := TPeople.Create(FObjConnect);
-  People.Schema := FObjConnect.Schema;
+  try
+    People := TPeople.Create(Connect);
 
-  Address := TAddress.Create(FObjConnect);
-  Address.Schema := FObjConnect.Schema;
+    People.QryPeople := TFDQuery.Create(nil);
+    People.QryPeople.Connection := FObjConnect.Connection;
+  except
+    on E:Exception do
+      raise Exception.Create('Erro ao criar TPeople' + CR + e.ToString);
+  end;
 
-  Integration := TIntegrationAddress.Create(FObjConnect);
-  Integration.Schema := FObjConnect.Schema;
+  try
+    Address := TAddress.Create(Connect);
 
-  Qry := TFDQuery.Create(Nil);
-  Qry.Connection := Connect.Connection;
+    Address.QryAddress := TFDQuery.Create(nil);
+    Address.QryAddress.Connection := FObjConnect.Connection;
+  except
+    on E:Exception do
+      raise Exception.Create('Erro ao criar TAddress' + CR + e.ToString);
+  end;
 
-  DTSource := TDataSource.Create(Nil);
-  DTSource.DataSet := MemTable;
+  try
+    Integration := TIntegrationAddress.Create(Connect);
 
-  FCEP := TViaCep.Create();
+    Integration.QryAddress := TFDQuery.Create(nil);
+    Integration.QryAddress.Connection := FObjConnect.Connection;
+  except
+    on E:Exception do
+      raise Exception.Create('Erro ao criar TIntegrationAddress' + CR + e.ToString);
+  end;
+
+  try
+    Qry := TFDQuery.Create(Nil);
+    Qry.Connection := FObjConnect.Connection;
+  except
+    on E:Exception do
+      raise Exception.Create('Erro ao criar TFDQuery' + CR + e.ToString);
+  end;
+
+  try
+    DTSource := TDataSource.Create(Nil);
+    DTSource.DataSet := MemTable;
+  except
+    on E:Exception do
+      raise Exception.Create('Erro ao criar TDataSource' + CR + e.ToString);
+  end;
+
+  try
+    FCEP := TViaCep.Create();
+  except
+    on E:Exception do
+      raise Exception.Create('Erro ao criar TViaCep' + CR + e.ToString);
+  end;
 end;
 
 destructor TMasterClass.Destroy;
